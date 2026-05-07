@@ -284,7 +284,7 @@ function initChart(){
       const now=Date.now();
       if(lastClickName===name && now-lastClickTime<350){
         // Double click
-        if(activeTab==='china')toggleChinaCity(name,COLORS[0]);
+        if(activeTab==='china'){const c=chinaCityInfo.find(x=>x.name===name);if(c)toggleChinaCity(c.adcode+'',COLORS[0]);}
         else if(viewingCountry)toggleWorldSubRegion(name,COLORS[0]);
         else toggleWorldCountry(name,COLORS[0]);
         lastClickName='';
@@ -302,7 +302,7 @@ function initChart(){
 
 function showItemInfo(name){
   if(activeTab==='china'){
-    const info=chinaCityInfo.find(c=>c.adcode+''===name);
+    const info=chinaCityInfo.find(c=>c.name===name);
     if(info){
       const color=checkinData.china[name];
       if(color){
@@ -373,7 +373,7 @@ function makeChinaOption(){
     const prov=c.province;
     const base=PROV_COLORS[prov]||'#64748b';
     return{
-      name:c.adcode+'',
+      name:c.name,
       labelName:c.name,
       itemStyle:{areaColor:color||lighten(base,0.75)},
       emphasis:{itemStyle:{areaColor:color||'#f59e0b',shadowBlur:10,shadowColor:color||'#f59e0b'}}
@@ -382,7 +382,7 @@ function makeChinaOption(){
   return{
     backgroundColor:'#0f172a',
     tooltip:{trigger:'item',formatter:p=>{
-      const info=chinaCityInfo.find(c=>c.adcode+''===p.name);
+      const info=chinaCityInfo.find(c=>c.name===p.name);
       if(!info)return p.name;
       const color=checkinData.china[p.name];
       return`<div style="font-weight:600">${info.name}</div><div style="color:#94a3b8;font-size:12px">${info.province}</div><div style="color:${color||'#f59e0b'};margin-top:4px">${color?'✅ 已打卡（单击改色）':'双击打卡'}</div>`;
@@ -527,7 +527,7 @@ function goBack(){
       const name=params.name;
       const now=Date.now();
       if(lastClickName===name && now-lastClickTime<350){
-        if(activeTab==='china')toggleChinaCity(name,COLORS[0]);
+        if(activeTab==='china'){const c=chinaCityInfo.find(x=>x.name===name);if(c)toggleChinaCity(c.adcode+'',COLORS[0]);}
         else toggleWorldCountry(name,COLORS[0]);
         lastClickName='';lastClickTime=0;
       }else{
