@@ -283,10 +283,15 @@ function initChart(){
       const name=params.name;
       const now=Date.now();
       if(lastClickName===name && now-lastClickTime<350){
-        // Double click
-        if(activeTab==='china')toggleChinaCity(name,COLORS[0]);
-        else if(viewingCountry)toggleWorldSubRegion(name,COLORS[0]);
-        else toggleWorldCountry(name,COLORS[0]);
+        // Double click — viewingCountry has highest priority
+        if(viewingCountry){
+          toggleWorldSubRegion(name,COLORS[0]);
+        }else if(activeTab==='china'){
+          const city=chinaCityInfo.find(c=>c.name===name);
+          if(city)toggleChinaCity(city.adcode,COLORS[0]);
+        }else{
+          toggleWorldCountry(name,COLORS[0]);
+        }
         lastClickName='';
         lastClickTime=0;
       }else{
@@ -527,8 +532,12 @@ function goBack(){
       const name=params.name;
       const now=Date.now();
       if(lastClickName===name && now-lastClickTime<350){
-        if(activeTab==='china')toggleChinaCity(name,COLORS[0]);
-        else toggleWorldCountry(name,COLORS[0]);
+        if(activeTab==='china'){
+          const city=chinaCityInfo.find(c=>c.name===name);
+          if(city)toggleChinaCity(city.adcode,COLORS[0]);
+        }else{
+          toggleWorldCountry(name,COLORS[0]);
+        }
         lastClickName='';lastClickTime=0;
       }else{
         lastClickName=name;lastClickTime=now;
