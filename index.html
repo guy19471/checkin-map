@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>🗺️ 城市打卡地图</title>
+<title>🗺️ 行万里路</title>
 <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
@@ -17,7 +17,7 @@ body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;backgr
 .tab-btn.active{background:var(--accent);color:#000;font-weight:600}
 .back-btn{padding:4px 10px;border-radius:16px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:11px;cursor:pointer;margin-left:8px}
 
-/* Main layout: left panel + map side by side */
+/* Main layout - desktop: side by side */
 .main-layout{display:flex;flex:1;min-height:0;overflow:hidden}
 
 /* Left sidebar */
@@ -28,436 +28,601 @@ body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;backgr
 .stat-chip.visited .num{color:var(--check)}
 .stat-chip .label{font-size:.6rem;color:var(--text2);display:block}
 
-/* Search and filter */
 .panel-search{padding:6px 8px;flex-shrink:0;border-bottom:1px solid var(--border);display:flex;gap:4px}
 .panel-search input{flex:1;padding:5px 8px;border-radius:6px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:.75rem;outline:none}
 .panel-search select{padding:5px 6px;border-radius:6px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:.7rem;max-width:80px;outline:none;cursor:pointer}
 
-/* Item list */
 .item-list{flex:1;overflow-y:auto;padding:4px}
 .item-list::-webkit-scrollbar{width:4px}
 .item-list::-webkit-scrollbar-track{background:transparent}
 .item-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
 .item-group{margin-bottom:6px}
 .group-header{display:flex;align-items:center;padding:5px 8px;background:rgba(255,255,255,.03);border-radius:6px;font-size:.7rem;color:var(--text2);cursor:pointer;border:1px solid transparent;transition:all .15s}
-.group-header:hover{background:rgba(255,255,255,.06)}
-.group-header .group-name{flex:1}
-.group-header .group-count{color:var(--accent);font-weight:600}
-.group-header .toggle-icon{font-size:.6rem;transition:transform .2s}
 .group-header.collapsed .toggle-icon{transform:rotate(-90deg)}
-.item-row{display:flex;align-items:center;justify-content:space-between;padding:6px 8px 6px 20px;margin:1px 0;border-radius:6px;cursor:pointer;font-size:.78rem;border:1px solid transparent;transition:all .15s}
-.item-row:hover{background:rgba(255,255,255,.04);border-color:var(--border)}
-.item-row.visited{background:rgba(16,185,129,.07);border-color:rgba(16,185,129,.2)}
+.group-name{flex:1;font-weight:500}
+.group-count{font-size:.65rem;color:var(--accent);margin-right:4px}
+.toggle-icon{font-size:.6rem;transition:transform .2s}
+.group-items{padding:2px 0 2px 8px}
+.item-row{display:flex;align-items:center;padding:4px 6px;border-radius:5px;cursor:pointer;font-size:.75rem;transition:all .15s;gap:4px}
+.item-row:hover{background:rgba(255,255,255,.05)}
+.item-row.visited{background:rgba(16,185,129,.08)}
+.item-row.enter-country{color:var(--accent)}
 .item-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.item-sub{font-size:.65rem;color:var(--text2);margin-left:4px}
-.item-dot{width:16px;height:16px;border-radius:50%;border:2px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:9px;transition:all .2s}
-.item-dot.checked{border-color:var(--check);color:#fff}
+.item-sub{font-size:.6rem;color:var(--text2);flex-shrink:0}
+.item-dot{width:18px;height:18px;border-radius:50%;border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:9px;flex-shrink:0;background:transparent;color:#000}
+.item-dot.checked{color:#fff}
 .empty-hint{text-align:center;padding:30px;color:var(--text2);font-size:.8rem}
 
-/* Footer buttons in sidebar */
-.sidebar-footer{display:flex;gap:4px;padding:6px 8px;border-top:1px solid var(--border);flex-shrink:0;flex-wrap:wrap}
-.sidebar-footer button{flex:1;min-width:45%;padding:6px 0;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text);font-size:.7rem;cursor:pointer;white-space:nowrap;transition:all .15s}
-.sidebar-footer button:hover{background:rgba(255,255,255,.05)}
-.sidebar-footer .btn-primary{background:var(--accent);color:#000;border:none;font-weight:600}
-
-/* Map container */
-#map-container{flex:1;min-width:0;position:relative;display:flex;flex-direction:column}
-#map{width:100%;flex:1;min-height:0}
-.legend{position:absolute;bottom:10px;left:10px;display:flex;gap:10px;background:rgba(15,23,42,.88);padding:5px 10px;border-radius:8px;font-size:.68rem;color:var(--text2);border:1px solid var(--border);pointer-events:none}
-
-/* Hint box */
-.hint-box{position:absolute;top:8px;left:50%;transform:translateX(-50%);background:rgba(245,158,11,.15);border:1px solid rgba(245,158,11,.4);border-radius:8px;padding:6px 14px;font-size:.72rem;color:var(--accent);white-space:nowrap;display:none;z-index:5}
-.hint-box.show{display:block}
-
-/* Loading overlay */
-.loading-overlay{position:absolute;inset:0;background:rgba(15,23,42,.9);display:none;align-items:center;justify-content:center;z-index:50}
-.loading-overlay.show{display:flex}
-.loading-text{color:var(--text);font-size:.9rem}
-
-/* Modals */
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:100;display:none;align-items:center;justify-content:center;padding:10px}
-.modal-overlay.show{display:flex}
-.modal-content{background:var(--card);border-radius:14px;padding:20px;width:100%;max-width:400px;max-height:85vh;overflow-y:auto;border:1px solid var(--border)}
-.modal-content h3{font-size:1rem;margin-bottom:8px}
-.modal-content .hint{color:var(--text2);font-size:.7rem;margin-bottom:8px;display:block}
-.modal-content textarea{width:100%;padding:10px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:.7rem;min-height:70px;resize:vertical;outline:none;word-break:break-all;font-family:inherit}
-.modal-actions{display:flex;gap:8px;margin-top:10px;justify-content:flex-end}
-.modal-actions button{padding:7px 14px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text);font-size:.78rem;cursor:pointer}
-.modal-actions .btn-primary{background:var(--accent);color:#000;border:none;font-weight:600}
-.color-picker{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
-.color-btn{width:30px;height:30px;border-radius:6px;border:2px solid transparent;cursor:pointer;transition:all .2s}
-.color-btn:hover,.color-btn.active{border-color:#fff;transform:scale(1.12)}
-#preview-canvas{width:100%;border-radius:8px;margin-top:8px;background:#1a1a2e}
+/* Right map area */
+.right-area{flex:1;min-width:0;display:flex;flex-direction:column}
+#chart{flex:1;min-height:0}
 
 /* Country detail header */
-.country-detail-header{display:none;align-items:center;padding:8px 12px;background:rgba(245,158,11,.1);border-bottom:1px solid rgba(245,158,11,.3);font-size:.8rem;color:var(--accent);flex-shrink:0}
-.country-detail-header.show{display:flex;gap:6px}
-.country-detail-header .close-btn{margin-left:auto;cursor:pointer;padding:2px 8px;border-radius:4px;border:1px solid var(--accent);font-size:.7rem}
+.country-detail-header{display:none;align-items:center;padding:6px 12px;background:var(--card);border-bottom:1px solid var(--border);flex-shrink:0;gap:8px}
+.country-detail-header.show{display:flex}
+.country-detail-header span{font-size:.8rem}
 
-/* Mobile responsive */
+/* Legend */
+.legend{text-align:center;padding:4px;font-size:.7rem;color:var(--text2);flex-shrink:0;background:var(--card);border-top:1px solid var(--border)}
+
+/* Hint box */
+#hint-box{position:fixed;bottom:10px;right:10px;background:rgba(15,23,42,.95);border:1px solid var(--border);border-radius:8px;padding:8px 14px;font-size:.8rem;color:var(--accent);pointer-events:none;z-index:50;opacity:0;transition:opacity .3s;max-width:200px}
+#hint-box.show{opacity:1}
+
+/* ==================== MODALS ==================== */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:100;align-items:center;justify-content:center;padding:20px}
+.modal-overlay.show{display:flex}
+.modal{background:var(--card);border:1px solid var(--border);border-radius:12px;width:100%;max-width:500px;max-height:80vh;overflow-y:auto;padding:20px}
+.modal h3{font-size:1rem;margin-bottom:14px;color:var(--accent)}
+.modal h4{font-size:.85rem;margin:12px 0 8px;color:var(--text2)}
+.modal pre{font-size:.75rem;background:var(--bg);padding:10px;border-radius:6px;overflow:auto;max-height:200px;white-space:pre-wrap;word-break:break-all}
+.modal textarea{width:100%;height:120px;font-size:.75rem;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:8px;resize:vertical;font-family:inherit}
+.modal input[type="text"],.modal input[type="number"]{width:100%;padding:8px;border-radius:6px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:.8rem;margin-bottom:8px}
+.modal-actions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.btn{padding:7px 16px;border-radius:8px;border:none;font-size:.8rem;cursor:pointer;transition:all .2s;font-family:inherit}
+.btn-primary{background:var(--accent);color:#000;font-weight:600}
+.btn-secondary{background:var(--border);color:var(--text)}
+.btn-ghost{background:transparent;border:1px solid var(--border);color:var(--text2);font-size:.75rem;padding:5px 10px}
+.modal-close{position:absolute;top:12px;right:12px;background:none;border:none;color:var(--text2);cursor:pointer;font-size:1.2rem;line-height:1}
+.modal{position:relative}
+
+/* Color picker */
+#color-picker{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.color-btn{width:32px;height:32px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:transform .2s}
+.color-btn:hover{transform:scale(1.15)}
+.color-btn.active{border-color:#fff}
+#color-item-name{margin-bottom:8px;font-size:.9rem}
+
+/* Image export */
+.img-size-btns{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+.img-size-btn{padding:5px 12px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:.75rem;cursor:pointer}
+.img-size-btn.active{background:var(--accent);color:#000;border-color:var(--accent)}
+#preview-canvas{max-width:100%;border-radius:6px;display:block;margin:10px auto;background:#0f172a}
+#img-sub-hint{font-size:.7rem;color:var(--text2);text-align:center;margin-top:6px}
+
+/* Share */
+#share-link{width:100%;padding:8px;border-radius:6px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:.75rem;margin-bottom:8px}
+
+/* ==================== PHOTO MODAL ==================== */
+#photo-modal .modal{max-width:600px}
+.photo-region-title{font-size:.85rem;color:var(--text2);margin-bottom:10px;padding:6px 10px;background:var(--bg);border-radius:6px}
+.photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px;margin:10px 0;max-height:400px;overflow-y:auto}
+.photo-thumb{position:relative;border-radius:8px;overflow:hidden;aspect-ratio:1;cursor:pointer;border:1px solid var(--border);transition:transform .2s}
+.photo-thumb:hover{transform:scale(1.03)}
+.photo-thumb img{width:100%;height:100%;object-fit:cover}
+.photo-thumb .photo-del{position:absolute;top:2px;right:2px;width:20px;height:20px;border-radius:50%;background:rgba(0,0,0,.7);color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center;cursor:pointer;border:none}
+.photo-add-btn{aspect-ratio:1;border:2px dashed var(--border);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:2rem;color:var(--text2);transition:all .2s}
+.photo-add-btn:hover{border-color:var(--accent);color:var(--accent)}
+.photo-add-btn input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.photo-empty{grid-column:1/-1;text-align:center;padding:30px;color:var(--text2);font-size:.8rem}
+#photo-caption{margin:10px 0}
+#photo-caption input{width:100%;padding:8px;border-radius:6px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:.8rem}
+
+/* ==================== PHOTO VIEWER ==================== */
+#photo-viewer{display:none;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:200;align-items:center;justify-content:center;flex-direction:column}
+#photo-viewer.show{display:flex}
+#photo-viewer img{max-width:95vw;max-height:80vh;object-fit:contain;border-radius:8px}
+#photo-viewer .pv-info{color:var(--text2);font-size:.8rem;margin-top:10px;text-align:center}
+#photo-viewer .pv-nav{position:absolute;top:50%;transform:translateY(-50%);background:rgba(255,255,255,.1);border:none;color:#fff;font-size:1.5rem;cursor:pointer;padding:10px 15px;border-radius:8px}
+#photo-viewer .pv-prev{left:10px}
+#photo-viewer .pv-next{right:10px}
+#photo-viewer .pv-close{position:absolute;top:15px;right:20px;background:none;border:none;color:#fff;font-size:2rem;cursor:pointer}
+#photo-viewer .pv-counter{color:var(--text2);font-size:.8rem;margin-top:8px}
+
+/* ==================== RIGHT CLICK MENU ==================== */
+#ctx-menu{display:none;position:fixed;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:4px 0;z-index:150;min-width:140px;box-shadow:0 8px 24px rgba(0,0,0,.4)}
+.ctx-item{padding:8px 14px;font-size:.8rem;cursor:pointer;display:flex;align-items:center;gap:8px;transition:background .15s}
+.ctx-item:hover{background:rgba(255,255,255,.08)}
+.ctx-item .ctx-icon{font-size:1rem}
+
+/* ==================== MOBILE RESPONSIVE ==================== */
 @media (max-width:640px){
-  .left-sidebar{width:220px}
+  body{height:100dvh}
   .main-layout{flex-direction:column}
-  .left-sidebar{width:100%;max-height:40vh;border-right:none;border-top:1px solid var(--border)}
-  .item-list{max-height:25vh}
-  #map{height:60vh}
+  .left-sidebar{width:100%;height:45%;border-right:none;border-bottom:1px solid var(--border);order:2}
+  .right-area{height:55%;order:1}
+  .right-area #chart{height:100%}
+  .item-list{max-height:none;overflow-y:auto}
+  .stats-strip{overflow-x:auto}
+  .stat-chip{min-width:55px}
+}
+
+/* Landscape mobile: list on left */
+@media (max-width:640px) and (orientation:landscape){
+  body{height:100dvh}
+  .main-layout{flex-direction:row}
+  .left-sidebar{width:40%;height:100%;border-right:1px solid var(--border);border-bottom:none;order:1}
+  .right-area{width:60%;height:100%;order:2}
+  .right-area #chart{height:100%}
+  .item-list{max-height:none;overflow-y:auto}
+  .stats-strip{overflow-x:auto}
+  .stat-chip{min-width:50px}
 }
 </style>
 </head>
 <body>
 
+<!-- Top bar -->
 <div class="top-bar">
-  <h1>🗺️ 城市打卡地图</h1>
   <button class="tab-btn active" data-tab="china" onclick="switchTab('china')">🇨🇳 中国</button>
   <button class="tab-btn" data-tab="world" onclick="switchTab('world')">🌍 世界</button>
   <button class="back-btn" id="back-btn" style="display:none" onclick="goBack()">← 返回</button>
+  <h1 style="flex:1;text-align:right;font-size:.8rem;color:var(--text2)">🗺️ 行万里路</h1>
 </div>
 
+<!-- Country detail header -->
 <div class="country-detail-header" id="country-detail-header">
-  <span>🗺️ <span id="country-detail-name">美国</span> — <span id="country-detail-count"></span></span>
-  <button class="close-btn" onclick="goBack()">返回世界</button>
+  <span>📍</span>
+  <span id="country-detail-name"></span>
+  <span id="country-detail-count"></span>
 </div>
 
+<!-- Main layout -->
 <div class="main-layout">
   <!-- Left sidebar -->
   <div class="left-sidebar">
     <div class="stats-strip" id="stats-strip"></div>
     <div class="panel-search">
-      <input type="text" placeholder="🔍 搜索..." id="search-input" oninput="onSearch(this.value)">
-      <select id="filter-select" onchange="onFilterChange(this.value)"></select>
+      <input id="search-input" placeholder="搜索..." oninput="onSearch(this.value)">
+      <select id="filter-select" onchange="onFilterChange(this.value)"><option value="all">全部</option></select>
     </div>
     <div class="item-list" id="item-list"></div>
-    <div class="sidebar-footer">
-      <button onclick="resetAll()">🔄 重置</button>
-      <button onclick="showShare()" class="btn-primary">🔗 分享</button>
-      <button onclick="generateImage()">📸 图片</button>
-      <button onclick="showExport()">💾 导出</button>
-      <button onclick="showImport()">📥 导入</button>
+  </div>
+  <!-- Right map area -->
+  <div class="right-area">
+    <div id="chart"></div>
+  </div>
+</div>
+
+<!-- Legend -->
+<div class="legend" id="legend"></div>
+
+<!-- Hint box -->
+<div id="hint-box"></div>
+
+<!-- ==================== MODALS ==================== -->
+
+<!-- Color picker -->
+<div class="modal-overlay" id="color-modal">
+  <div class="modal">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <h3>🎨 选择颜色</h3>
+      <button class="modal-close" onclick="closeModal('color-modal')">×</button>
+    </div>
+    <div id="color-item-name"></div>
+    <div id="color-picker"></div>
+    <div class="modal-actions">
+      <button class="btn btn-primary" onclick="applyColor()">确定</button>
+      <button class="btn btn-secondary" onclick="closeModal('color-modal')">取消</button>
     </div>
   </div>
-
-  <!-- Map -->
-  <div id="map-container">
-    <div id="map"></div>
-    <div class="hint-box" id="hint-box">💡 双击地图区域可快速打卡</div>
-    <div class="legend" id="legend"></div>
-    <div class="loading-overlay" id="loading"><div class="loading-text">📡 加载中...</div></div>
-  </div>
 </div>
 
-<!-- Color picker modal -->
-<div class="modal-overlay" id="color-modal">
-  <div class="modal-content">
-    <h3>🎨 选择打卡颜色</h3>
-    <span class="hint">为 <b id="color-item-name"></b> 选择颜色</span>
-    <div class="color-picker" id="color-picker"></div>
-    <div class="modal-actions"><button onclick="closeModal('color-modal')">取消</button><button class="btn-primary" onclick="applyColor()">确定</button></div>
-  </div>
-</div>
-
-<!-- Share modal -->
-<div class="modal-overlay" id="share-modal">
-  <div class="modal-content"><h3>🔗 分享链接</h3>
-    <span class="hint">复制链接发给朋友</span>
-    <textarea id="share-link" readonly></textarea>
-    <div class="modal-actions"><button class="btn-primary" onclick="copyShare()">📋 复制</button><button onclick="closeModal('share-modal')">关闭</button></div>
-  </div>
-</div>
-
-<!-- Export modal -->
-<div class="modal-overlay" id="export-modal">
-  <div class="modal-content"><h3>📤 导出数据</h3>
-    <span class="hint">复制 JSON 数据，可导入到其他设备</span>
-    <textarea id="export-data" readonly></textarea>
-    <div class="modal-actions"><button class="btn-primary" onclick="copyExport()">📋 复制</button><button onclick="closeModal('export-modal')">关闭</button></div>
-  </div>
-</div>
-
-<!-- Import modal -->
-<div class="modal-overlay" id="import-modal">
-  <div class="modal-content"><h3>📥 导入数据</h3>
-    <span class="hint">粘贴之前导出的 JSON 数据</span>
-    <textarea id="import-data" placeholder="在此粘贴 JSON..."></textarea>
-    <div class="modal-actions"><button class="btn-primary" onclick="doImport()">确认导入</button><button onclick="closeModal('import-modal')">取消</button></div>
-  </div>
-</div>
-
-<!-- Image modal -->
-<div class="modal-overlay" id="image-modal">
-  <div class="modal-content">
-    <h3>📸 打卡地图图片</h3>
+<!-- Image export -->
+<div class="modal-overlay" id="img-export-modal">
+  <div class="modal">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <h3>📸 生成分享图片</h3>
+      <button class="modal-close" onclick="closeModal('img-export-modal')">×</button>
+    </div>
+    <div class="img-size-btns">
+      <button class="img-size-btn active" data-size="S" onclick="setImgSize('S')">小</button>
+      <button class="img-size-btn" data-size="M" onclick="setImgSize('M')">中</button>
+      <button class="img-size-btn" data-size="L" onclick="setImgSize('L')">大</button>
+      <button class="img-size-btn" data-size="XL" onclick="setImgSize('XL')">超大</button>
+    </div>
+    <select id="img-ratio-select" style="width:100%;padding:6px;border-radius:6px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:.75rem;margin-bottom:8px">
+      <option value="16:9">16:9 横版</option>
+      <option value="16:10" selected>16:10 横版</option>
+      <option value="4:3">4:3 横版</option>
+      <option value="1:1">1:1 方形</option>
+    </select>
     <canvas id="preview-canvas"></canvas>
-    <div class="modal-actions"><button class="btn-primary" onclick="downloadImage()">⬇️ 下载</button><button onclick="closeModal('image-modal')">关闭</button></div>
+    <div id="img-sub-hint"></div>
+    <div class="modal-actions">
+      <button class="btn btn-primary" onclick="downloadImage()">⬇️ 下载图片</button>
+      <button class="btn btn-secondary" onclick="closeModal('img-export-modal')">关闭</button>
+    </div>
   </div>
+</div>
+
+<!-- Share -->
+<div class="modal-overlay" id="share-modal">
+  <div class="modal">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <h3>🔗 分享链接</h3>
+      <button class="modal-close" onclick="closeModal('share-modal')">×</button>
+    </div>
+    <p style="font-size:.75rem;color:var(--text2);margin-bottom:8px">复制链接，好友打开后自动导入你的打卡数据</p>
+    <input id="share-link" readonly onclick="this.select()">
+    <div class="modal-actions">
+      <button class="btn btn-primary" onclick="copyShare()">📋 复制链接</button>
+      <button class="btn btn-secondary" onclick="closeModal('share-modal')">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- Export -->
+<div class="modal-overlay" id="export-modal">
+  <div class="modal">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <h3>💾 导出数据</h3>
+      <button class="modal-close" onclick="closeModal('export-modal')">×</button>
+    </div>
+    <textarea id="export-data" readonly onclick="this.select()"></textarea>
+    <div class="modal-actions">
+      <button class="btn btn-primary" onclick="copyExport()">📋 复制 JSON</button>
+      <button class="btn btn-secondary" onclick="closeModal('export-modal')">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- Import -->
+<div class="modal-overlay" id="import-modal">
+  <div class="modal">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <h3>📂 导入数据</h3>
+      <button class="modal-close" onclick="closeModal('import-modal')">×</button>
+    </div>
+    <textarea id="import-data" placeholder="粘贴导出的 JSON 数据..."></textarea>
+    <div class="modal-actions">
+      <button class="btn btn-primary" onclick="doImport()">✅ 导入</button>
+      <button class="btn btn-secondary" onclick="closeModal('import-modal')">取消</button>
+    </div>
+  </div>
+</div>
+
+<!-- Photo modal -->
+<div class="modal-overlay" id="photo-modal">
+  <div class="modal">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <h3>📷 打卡照片</h3>
+      <button class="modal-close" onclick="closeModal('photo-modal')">×</button>
+    </div>
+    <div class="photo-region-title" id="photo-region-title"></div>
+    <div class="photo-grid" id="photo-grid"></div>
+    <div id="photo-caption"><input type="text" id="photo-caption-input" placeholder="添加描述（可选）..."></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="clearPhotos()">🗑️ 清除全部</button>
+      <button class="btn btn-secondary" onclick="closeModal('photo-modal')">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- Photo viewer -->
+<div id="photo-viewer" onclick="closePhotoViewer()">
+  <button class="pv-close" onclick="event.stopPropagation();closePhotoViewer()">×</button>
+  <button class="pv-nav pv-prev" onclick="event.stopPropagation();showPrevPhoto()">‹</button>
+  <img id="pv-img" onclick="event.stopPropagation()">
+  <button class="pv-nav pv-next" onclick="event.stopPropagation();showNextPhoto()">›</button>
+  <div id="pv-info" class="pv-info"></div>
+  <div id="pv-counter" class="pv-counter"></div>
+</div>
+
+<!-- Context menu -->
+<div id="ctx-menu">
+  <div class="ctx-item" onclick="ctxChangeColor()"><span class="ctx-icon">🎨</span> 更换颜色</div>
+  <div class="ctx-item" onclick="ctxAddPhoto()"><span class="ctx-icon">📷</span> 添加照片</div>
+  <div class="ctx-item" onclick="ctxViewPhotos()"><span class="ctx-icon">🖼️</span> 查看照片</div>
+  <div class="ctx-item" onclick="ctxUncheck()"><span class="ctx-icon">❌</span> 取消打卡</div>
+</div>
+
+<!-- Bottom toolbar -->
+<div style="display:flex;gap:6px;padding:6px 12px;background:var(--card);border-top:1px solid var(--border);flex-shrink:0;flex-wrap:wrap">
+  <button class="btn btn-ghost" onclick="showShare()">🔗 分享</button>
+  <button class="btn btn-ghost" onclick="showExport()">💾 导出</button>
+  <button class="btn btn-ghost" onclick="showImport()">📂 导入</button>
+  <button class="btn btn-ghost" onclick="showImageExport()">📸 图片</button>
+  <button class="btn btn-ghost" onclick="resetAll()">🔄 重置</button>
 </div>
 
 <script>
 // ==================== CONFIG ====================
-const S_KEY='checkin_map_v8';
-const COLORS=['#10b981','#f59e0b','#ef4444','#8b5cf6','#3b82f6','#ec4899','#14b8a6','#f97316','#84cc16','#06b6d4'];
-const UNVISITED_COLOR='#2d3748'; // gray for unvisited
-let chart=null,activeTab='china',searchQuery='',filterValue='all',viewingCountry=null;
-let chinaGeo=null,worldGeo=null;
-let checkinData={china:{},world:{},worldSub:{}};
-let chinaCityInfo=[],worldCountryInfo=[];
-const CHINA_JSON_URL='data/china_cities.json';
-const WORLD_JSON_URL='data/world_countries.json';
+const STORAGE_KEY='checkin_map_v10';
+const COLORS=['#ef4444','#f97316','#f59e0b','#eab308','#84cc16','#22c55e','#10b981','#14b8a6','#06b6d4','#0ea5e9','#3b82f6','#6366f1','#8b5cf6','#a855f7','#d946ef','#ec4899','#f43f5e'];
+const UNVISITED_COLOR='#1e293b';
 
-// Province base colors
-const PROV_COLORS={
-  '北京':'#e74c3c','天津':'#e67e22','河北':'#d4a017','山西':'#27ae60','内蒙古':'#2ecc71',
-  '辽宁':'#1abc9c','吉林':'#3498db','黑龙江':'#2980b9','上海':'#9b59b6','江苏':'#8e44ad',
-  '浙江':'#e91e63','安徽':'#e74c3c','福建':'#ff5722','江西':'#ff9800','山东':'#795548',
-  '河南':'#607d8b','湖北':'#009688','湖南':'#4caf50','广东':'#cddc39','广西':'#ffeb3b',
-  '海南':'#00bcd4','重庆':'#e040fb','四川':'#536dfe','贵州':'#448aff','云南':'#40c4ff',
-  '西藏':'#b388ff','陕西':'#ff4081','甘肃':'#ff6e40','青海':'#69f0ae','宁夏':'#ea80fc',
-  '新疆':'#80d8ff','台湾':'#b2ff59','香港':'#ffd740','澳门':'#ff80ab'
-};
+// Province colors for China
+const PROV_COLORS={'北京':'#ef4444','天津':'#f97316','河北':'#eab308','山西':'#84cc16','内蒙古':'#22c55e','辽宁':'#10b981','吉林':'#14b8a6','黑龙江':'#06b6d4','上海':'#0ea5e9','江苏':'#3b82f6','浙江':'#6366f1','安徽':'#8b5cf6','福建':'#a855f7','江西':'#d946ef','山东':'#ec4899','河南':'#f43f5e','湖北':'#ef4444','湖南':'#f97316','广东':'#f59e0b','广西':'#84cc16','海南':'#22c55e','重庆':'#10b981','四川':'#14b8a6','贵州':'#06b6d4','云南':'#0ea5e9','西藏':'#3b82f6','陕西':'#6366f1','甘肃':'#8b5cf6','青海':'#a855f7','宁夏':'#d946ef','新疆':'#ec4899','台湾':'#f43f5e'};
+const CONTINENT_MAP={AS:'亚洲',EU:'欧洲',NA:'北美洲',SA:'南美洲',AF:'非洲',OC:'大洋洲',AN:'南极洲'};
+const K_CONT_CH={AS:'亚洲',EU:'欧洲',NA:'北美洲',SA:'南美洲',AF:'非洲',OC:'大洋洲',AN:'南极洲'};
 
-const K_CONTINENTS=['Asia','Europe','Africa','North America','South America','Oceania','Antarctica'];
-const K_CONT_CH={'Asia':'亚洲','Europe':'欧洲','Africa':'非洲','North America':'北美洲','South America':'南美洲','Oceania':'大洋洲','Antarctica':'南极洲'};
-
-// Country sub-regions with Chinese names
+// Country regions with sub-divisions
 const COUNTRY_REGIONS={
-  'United States of America':{name:'美国',regions:['Alabama','Alaska','Arizona','Arkansas','California','Colorado','Connecticut','Delaware','Florida','Georgia','Hawaii','Idaho','Illinois','Indiana','Iowa','Kansas','Kentucky','Louisiana','Maine','Maryland','Massachusetts','Michigan','Minnesota','Mississippi','Missouri','Montana','Nebraska','Nevada','New Hampshire','New Jersey','New Mexico','New York','North Carolina','North Dakota','Ohio','Oklahoma','Oregon','Pennsylvania','Rhode Island','South Carolina','South Dakota','Tennessee','Texas','Utah','Vermont','Virginia','Washington','West Virginia','Wisconsin','Wyoming','District of Columbia'],type:'州',typeName:'州'},
-  'China':{name:'中国',useGeoJSON:true,type:'省级行政区'},
-  'Russia':{name:'俄罗斯',count:89,type:'联邦主体'},
-  'Canada':{name:'加拿大',count:13,type:'省/地区'},
-  'Australia':{name:'澳大利亚',count:8,type:'州/领地'},
-  'Brazil':{name:'巴西',count:26,type:'州'},
-  'India':{name:'印度',count:36,type:'邦/联邦属地'},
-  'Iran':{name:'伊朗',count:31,type:'省',regions:['Alborz','Ardabil','Bushehr','Chaharmahal and Bakhtiari','East Azerbaijan','Isfahan','Fars','Gilan','Golestan','Hamadan','Hormozgan','Ilam','Kerman','Kermanshah','Khuzestan','Kohgiluyeh and Boyer-Ahmad','Kurdistan','Lorestan','Markazi','Mazandaran','North Khorasan','Qazvin','Qom','Razavi Khorasan','Semnan','Sistan and Baluchestan','South Khorasan','Tehran','West Azerbaijan','Yazd','Zanjan'],type:'省'},
-  'Japan':{name:'日本',count:47,type:'都道府县'},
-  'Germany':{name:'德国',count:16,type:'联邦州'},
-  'France':{name:'法国',count:18,type:'大区'},
-  'United Kingdom':{name:'英国',count:4,type:'构成国'},
-  'Mexico':{name:'墨西哥',count:32,type:'州'},
-  'Italy':{name:'意大利',count:20,type:'大区'},
-  'Spain':{name:'西班牙',count:17,type:'自治区'},
-  'South Korea':{name:'韩国',count:17,type:'道/市'},
-  'Indonesia':{name:'印度尼西亚',count:34,type:'省'},
-  'Thailand':{name:'泰国',count:77,type:'府'},
-  'Vietnam':{name:'越南',count:63,type:'省/市'},
-  'Turkey':{name:'土耳其',count:81,type:'省'},
-  'Saudi Arabia':{name:'沙特阿拉伯',count:13,type:'省'},
-  'Argentina':{name:'阿根廷',count:23,type:'省'},
-  'South Africa':{name:'南非',count:9,type:'省'},
-  'Egypt':{name:'埃及',count:27,type:'省'}
+  'United States of America':{name:'美国',type:'州',count:50,regions:['Alabama','Alaska','Arizona','Arkansas','California','Colorado','Connecticut','Delaware','Florida','Georgia','Hawaii','Idaho','Illinois','Indiana','Iowa','Kansas','Kentucky','Louisiana','Maine','Maryland','Massachusetts','Michigan','Minnesota','Mississippi','Missouri','Montana','Nebraska','Nevada','New Hampshire','New Jersey','New Mexico','New York','North Carolina','North Dakota','Ohio','Oklahoma','Oregon','Pennsylvania','Rhode Island','South Carolina','South Dakota','Tennessee','Texas','Utah','Vermont','Virginia','Washington','West Virginia','Wisconsin','Wyoming']},
+  'Iran':{name:'伊朗',type:'省',count:31,regions:['Alborz','Ardabil','Bushehr','Chaharmahal and Bakhtiari','East Azerbaijan','Isfahan','Fars','Gilan','Golestan','Hamadan','Hormozgan','Ilam','Kerman','Kermanshah','Khuzestan','Kohgiluyeh and Boyer-Ahmad','Kurdistan','Lorestan','Markazi','Mazandaran','North Khorasan','Qazvin','Qom','Razavi Khorasan','Semnan','Sistan and Baluchestan','South Khorasan','Tehran','West Azerbaijan','Yazd','Zanjan']},
+  'Russia':{name:'俄罗斯',type:'联邦主体',count:89},
+  'China':{name:'中国',type:'省份',count:34},
+  'Brazil':{name:'巴西',type:'州',count:26},
+  'Germany':{name:'德国',type:'联邦州',count:16},
+  'France':{name:'法国',type:'大区',count:18},
+  'United Kingdom':{name:'英国',type:'构成国/地区',count:72},
+  'India':{name:'印度',type:'邦/联邦领土',count:36},
+  'Indonesia':{name:'印度尼西亚',type:'省',count:34},
+  'Mexico':{name:'墨西哥',type:'州',count:32},
+  'Saudi Arabia':{name:'沙特阿拉伯',type:'省',count:13},
+  'South Africa':{name:'南非',type:'省',count:9}
 };
 
-// US States Chinese names
-const US_STATES_CN={
-  'Alabama':'阿拉巴马州','Alaska':'阿拉斯加州','Arizona':'亚利桑那州','Arkansas':'阿肯色州',
-  'California':'加利福尼亚州','Colorado':'科罗拉多州','Connecticut':'康涅狄格州','Delaware':'特拉华州',
-  'Florida':'佛罗里达州','Georgia':'佐治亚州','Hawaii':'夏威夷州','Idaho':'爱达荷州',
-  'Illinois':'伊利诺伊州','Indiana':'印第安纳州','Iowa':'艾奥瓦州','Kansas':'堪萨斯州',
-  'Kentucky':'肯塔基州','Louisiana':'路易斯安那州','Maine':'缅因州','Maryland':'马里兰州',
-  'Massachusetts':'马萨诸塞州','Michigan':'密歇根州','Minnesota':'明尼苏达州','Mississippi':'密西西比州',
-  'Missouri':'密苏里州','Montana':'蒙大拿州','Nebraska':'内布拉斯加州','Nevada':'内华达州',
-  'New Hampshire':'新罕布什尔州','New Jersey':'新泽西州','New Mexico':'新墨西哥州','New York':'纽约州',
-  'North Carolina':'北卡罗来纳州','North Dakota':'北达科他州','Ohio':'俄亥俄州','Oklahoma':'俄克拉荷马州',
-  'Oregon':'俄勒冈州','Pennsylvania':'宾夕法尼亚州','Rhode Island':'罗德岛州','South Carolina':'南卡罗来纳州',
-  'South Dakota':'南达科他州','Tennessee':'田纳西州','Texas':'得克萨斯州','Utah':'犹他州',
-  'Vermont':'佛蒙特州','Virginia':'弗吉尼亚州','Washington':'华盛顿州','West Virginia':'西弗吉尼亚州',
-  'Wisconsin':'威斯康星州','Wyoming':'怀俄明州','District of Columbia':'华盛顿特区'
-};
+// Chinese name mapping for US states
+const US_STATE_NAMES={'Alabama':'阿拉巴马州','Alaska':'阿拉斯加州','Arizona':'亚利桑那州','Arkansas':'阿肯色州','California':'加利福尼亚州','Colorado':'科罗拉多州','Connecticut':'康涅狄格州','Delaware':'特拉华州','Florida':'佛罗里达州','Georgia':'佐治亚州','Hawaii':'夏威夷州','Idaho':'爱达荷州','Illinois':'伊利诺伊州','Indiana':'印第安纳州','Iowa':'艾奥瓦州','Kansas':'堪萨斯州','Kentucky':'肯塔基州','Louisiana':'路易斯安那州','Maine':'缅因州','Maryland':'马里兰州','Massachusetts':'马萨诸塞州','Michigan':'密歇根州','Minnesota':'明尼苏达州','Mississippi':'密西西比州','Missouri':'密苏里州','Montana':'蒙大拿州','Nebraska':'内布拉斯加州','Nevada':'内华达州','New Hampshire':'新罕布什尔州','New Jersey':'新泽西州','New Mexico':'新墨西哥州','New York':'纽约州','North Carolina':'北卡罗来纳州','North Dakota':'北达科他州','Ohio':'俄亥俄州','Oklahoma':'俄克拉荷马州','Oregon':'俄勒冈州','Pennsylvania':'宾夕法尼亚州','Rhode Island':'罗德岛州','South Carolina':'南卡罗来纳州','South Dakota':'南达科他州','Tennessee':'田纳西州','Texas':'得克萨斯州','Utah':'犹他州','Vermont':'佛蒙特州','Virginia':'弗吉尼亚州','Washington':'华盛顿州','West Virginia':'西弗吉尼亚州','Wisconsin':'威斯康星州','Wyoming':'怀俄明州','District of Columbia':'华盛顿特区'};
 
-// Iran provinces Chinese names
-const IRAN_PROVINCES_CN={
-  'Alborz':'阿尔博尔兹省','Ardabil':'阿尔达比勒省','Bushehr':'布什尔省','Chaharmahal and Bakhtiari':'恰哈马哈勒-贝克蒂亚里省',
-  'East Azerbaijan':'东阿塞拜疆省','Isfahan':'伊斯法罕省','Fars':'法尔斯省','Gilan':'吉兰省',
-  'Golestan':'戈勒斯坦省','Hamadan':'哈马丹省','Hormozgan':'霍尔木兹甘省','Ilam':'伊lam省',
-  'Kerman':'克尔曼省','Kermanshah':'克尔曼沙阿省','Khuzestan':'胡齐斯坦省','Kohgiluyeh and Boyer-Ahmad':'科吉卢耶-博韦艾哈迈德省',
-  'Kurdistan':'库尔德斯坦省','Lorestan':'洛雷斯坦省','Markazi':'中央省','Mazandaran':'马赞达兰省',
-  'North Khorasan':'北霍拉桑省','Qazvin':'加兹温省','Qom':'库姆省','Razavi Khorasan':'拉扎维呼罗珊省',
-  'Semnan':'塞姆南省','Sistan and Baluchestan':'锡斯坦-俾路支斯坦省','South Khorasan':'南霍拉桑省',
-  'Tehran':'德黑兰省','West Azerbaijan':'西阿塞拜疆省','Yazd':'亚兹德省','Zanjan':'赞詹省'
-};
+// Chinese name mapping for Iran provinces
+const IRAN_PROVINCE_NAMES={'Alborz':'阿尔博尔兹省','Ardabil':'阿尔达比勒省','Bushehr':'布什尔省','Chaharmahal and Bakhtiari':'恰哈马哈勒-巴赫蒂亚里省','East Azerbaijan':'东阿塞拜疆省','Isfahan':'伊斯法罕省','Fars':'法尔斯省','Gilan':'吉兰省','Golestan':'戈勒斯坦省','Hamadan':'哈马丹省','Hormozgan':'霍尔木兹甘省','Ilam':'伊拉姆省','Kerman':'克尔曼省','Kermanshah':'克尔曼沙阿省','Khuzestan':'胡齐斯坦省','Kohgiluyeh and Boyer-Ahmad':'科吉卢耶-博耶艾哈迈德省','Kurdistan':'库尔德斯坦省','Lorestan':'洛雷斯坦省','Markazi':'中央省','Mazandaran':'马赞达兰省','North Khorasan':'北霍拉桑省','Qazvin':'加兹温省','Qom':'库姆省','Razavi Khorasan':'拉扎维呼罗珊省','Semnan':'塞姆南省','Sistan and Baluchestan':'锡斯坦-俾路支斯坦省','South Khorasan':'南霍拉桑省','Tehran':'德黑兰省','West Azerbaijan':'西阿塞拜疆省','Yazd':'亚兹德省','Zanjan':'赞詹省'};
 
-// ==================== DATA LOADING ====================
-function showLoading(show){document.getElementById('loading').classList.toggle('show',show)}
-
-async function init(){
-  showLoading(true);
-  try{
-    const [cRes,wRes]=await Promise.all([fetch(CHINA_JSON_URL),fetch(WORLD_JSON_URL)]);
-    chinaGeo=await cRes.json();
-    worldGeo=await wRes.json();
-
-    chinaCityInfo=chinaGeo.features.map(f=>{
-      const p=f.properties;
-      return{name:p.name||'',province:p.province||'',adcode:p.adcode||'',level:p.level||''}
-    }).filter(x=>x.name);
-
-    worldCountryInfo=worldGeo.features.map(f=>{
-      const p=f.properties;
-      return{name:p.name||p.ADMIN||'',region:p.region||p.continent||''}
-    }).filter(x=>x.name);
-
-    chinaCityInfo.sort((a,b)=>a.name.localeCompare(b.name,'zh-CN'));
-    worldCountryInfo.sort((a,b)=>a.name.localeCompare(b.name,'en'));
-
-    loadSaved();
-    initChart();
-    switchTab('china');
-    showLoading(false);
-    showToast('双击地图打卡 · 单击已打卡区域改颜色');
-  }catch(e){
-    showLoading(false);
-    showToast('加载失败: '+e.message);
-  }
+function getRegionChineseName(country,name){
+  if(country==='United States of America')return US_STATE_NAMES[name]||name;
+  if(country==='Iran')return IRAN_PROVINCE_NAMES[name]||name;
+  return name;
 }
 
-function loadSaved(){
+// GeoJSON URLs
+const GEO_URLS={
+  china:'https://geo.datav.aliyun.com/areas_v3/bound/100000_full.json',
+  world:'https://geo.datav.aliyun.com/areas_v3/bound/world.json',
+  usStates:'data/us_states.json'
+};
+
+// ==================== STATE ====================
+let chart=null;
+let chinaGeo=null,worldGeo=null,usStatesGeo=null;
+let chinaCityInfo=[];
+let worldCountryInfo=[];
+let checkinData={china:{},world:{},worldSub:{}};
+let activeTab='china';
+let searchQuery='',filterValue='all';
+let viewingCountry=null;
+let countryDetailRegions=[];
+let lastCtx={name:'',tab:'',id:'',country:''};
+let photoViewerIdx=0;
+let photoViewerList=[];
+let imgExportSize='M';
+
+// ==================== INIT ====================
+async function init(){
+  loadData();
+  initChart();
+  loadGeoData();
+  document.getElementById('search-input').value='';
+  // Listen for resize/orientation changes on mobile
+  window.addEventListener('resize',handleResize);
+  window.addEventListener('orientationchange',handleResize);
+}
+
+function handleResize(){
+  if(chart)setTimeout(()=>{chart.resize()},100);
+}
+
+// ==================== DATA ====================
+function loadData(){
   try{
-    const raw=localStorage.getItem(S_KEY);
-    if(raw)checkinData=JSON.parse(raw);
+    const saved=localStorage.getItem(STORAGE_KEY);
+    if(saved){
+      const d=JSON.parse(saved);
+      checkinData=d;
+    }
   }catch(e){}
+  // Load from URL hash
   try{
-    const h=location.hash;
-    if(h.startsWith('#data=')){
-      const d=JSON.parse(atob(h.slice(6)));
-      if(d.china)checkinData.china=d.china;
-      if(d.world)checkinData.world=d.world;
-      if(d.worldSub)checkinData.worldSub=d.worldSub;
-      saveData();
+    const hash=location.hash;
+    if(hash.includes('#data=')){
+      const encoded=hash.split('#data=')[1];
+      const d=JSON.parse(atob(encoded));
+      if(d.china)checkinData.china={...checkinData.china,...d.china};
+      if(d.world)checkinData.world={...checkinData.world,...d.world};
+      if(d.worldSub)checkinData.worldSub={...checkinData.worldSub,...d.worldSub};
     }
   }catch(e){}
 }
 
 function saveData(){
-  try{
-    localStorage.setItem(S_KEY,JSON.stringify(checkinData));
-    const enc=btoa(JSON.stringify({china:checkinData.china,world:checkinData.world,worldSub:checkinData.worldSub}));
-    if(enc.length<2000)history.replaceState(null,'','#data='+enc);
-  }catch(e){}
+  try{localStorage.setItem(STORAGE_KEY,JSON.stringify(checkinData))}catch(e){}
 }
 
 // ==================== CHART ====================
-let lastClickTime=0,lastClickId='',lastClickTab='';
 function initChart(){
-  chart=echarts.init(document.getElementById('map'));
-  
-  chart.on('click',params=>{
-    if(params.componentType!=='series')return;
-    const clickId=params.name||'';
-    const now=Date.now();
-    const isDbl=(clickId===lastClickId&&now-lastClickTime<400&&lastClickTab===activeTab);
-    lastClickId=clickId;lastClickTime=now;lastClickTab=activeTab;
-    
-    if(isDbl){
-      if(activeTab==='china'){
-        const c=chinaCityInfo.find(x=>x.name===clickId);
-        if(c)doCheckin(c.adcode+'');
-      }else if(viewingCountry){
-        doWorldSubCheckin(viewingCountry,clickId);
-      }else{
-        const ri=COUNTRY_REGIONS[clickId];
-        if(ri&&!checkinData.world[clickId]&&ri.regions){
-          enterCountryDetail(clickId);return;
-        }
-        doWorldCheckin(clickId);
-      }
-    }else{
-      showItemInfo(clickId);
-    }
-  });
-  
-  // Mouse over for world sub-region highlight
-  chart.on('mouseover',params=>{
-    if(!viewingCountry||activeTab!=='world')return;
-    const ri=COUNTRY_REGIONS[viewingCountry];
-    if(!ri||!ri.regions)return;
-    // Highlight the hovered sub-region
-    const cnName=getRegionChineseName(viewingCountry,params.name);
-    document.getElementById('hint-box').textContent=`📍 ${cnName}`;
-    document.getElementById('hint-box').classList.add('show');
-  });
-  
-  chart.on('mouseout',params=>{
-    if(!viewingCountry)return;
-    document.getElementById('hint-box').classList.remove('show');
-  });
-  
-  window.addEventListener('resize',()=>{if(chart)chart.resize()});
+  chart=echarts.init(document.getElementById('chart'));
+  chart.on('click',onChartClick);
+  chart.on('dblclick',onChartDblClick);
+  // Global mouseover for world map hover highlight
+  chart.getZr().on('mousemove',onGlobalMouseMove);
+  chart.getZr().on('click',onGlobalClick);
+  renderStats();renderFilterSelect();renderItemList();renderLegend();
 }
 
-function getRegionChineseName(country, regionName){
-  if(country==='United States of America')return US_STATES_CN[regionName]||regionName;
-  if(country==='Iran')return IRAN_PROVINCES_CN[regionName]||regionName;
-  return regionName;
+function onGlobalMouseMove(params){
+  if(!params.target)return;
+  if(viewingCountry){
+    // In country detail - let individual regions handle hover via ECharts emphasis
+    return;
+  }
+  if(activeTab!=='world')return;
+  // Show tooltip for world country under cursor
+  const series=chart.getModel().getSeries()[0];
+  if(!series)return;
+  try{
+    const dataIndex=chart.convertFromPixel({seriesIndex:0},[params.offsetX,params.offsetY])[2];
+    if(dataIndex!=null&&dataIndex>=0){
+      const data=series.getData().getItem(dataIndex);
+      if(data&&data.name){
+        chart.dispatchAction({type:'showTip',seriesIndex:0,dataIndex});
+      }
+    }
+  }catch(e){}
+}
+
+function onGlobalClick(params){
+  // No-op; click is handled by chart.on('click')
+}
+
+// ==================== GEO LOADING ====================
+async function loadGeoData(){
+  try{
+    const [c,w,u]=await Promise.all([
+      fetch(GEO_URLS.china).then(r=>r.json()),
+      fetch(GEO_URLS.world).then(r=>r.json()),
+      fetch(GEO_URLS.usStates).then(r=>r.json()).catch(()=>null)
+    ]);
+    chinaGeo=c;worldGeo=w;usStatesGeo=u;
+    buildCityInfo();
+    buildCountryInfo();
+    try{echarts.registerMap('china_cities',chinaGeo)}catch(e){console.error('china reg err',e)}
+    try{echarts.registerMap('world_countries',worldGeo)}catch(e){console.error('world reg err',e)}
+    switchTab('china');
+  }catch(e){console.error('geo load err',e);showToast('地图数据加载失败')}
+}
+
+function buildCityInfo(){
+  if(!chinaGeo||!chinaGeo.features)return;
+  chinaCityInfo=chinaGeo.features.map(f=>{
+    const n=f.properties.name||'';
+    const p=f.properties.parent||'';
+    return{name:n,adcode:f.properties.adcode,province:p};
+  }).filter(c=>c.adcode&&c.name);
+}
+
+function buildCountryInfo(){
+  if(!worldGeo||!worldGeo.features)return;
+  worldCountryInfo=worldGeo.features.map(f=>{
+    const n=f.properties.name||f.properties.NAME||'';
+    const r=f.properties.continent||f.properties.region||'Other';
+    return{name:n,region:r};
+  });
+}
+
+// ==================== CHART EVENTS ====================
+function bindChartEvents(){
+  // Already set in initChart
+}
+
+function onChartClick(params){
+  if(!params.name)return;
+  const name=params.name;
+  
+  if(viewingCountry){
+    // In country detail: click on a region
+    const key=viewingCountry+'|'+name;
+    const color=checkinData.worldSub[key];
+    showHint(name+(color?'':''));
+    return;
+  }
+  
+  if(activeTab==='world'){
+    const ri=COUNTRY_REGIONS[name];
+    if(ri){
+      // Has sub-regions: show hint but don't auto-enter
+      const cn=ri.name;
+      showHint(`${cn}（${ri.count}个${ri.type}）— 双击进入详情`);
+    } else {
+      // No sub-regions: single click toggles checkin
+      toggleItem(name,'world');
+    }
+  } else {
+    // China: single click shows hint
+    const info=chinaCityInfo.find(c=>c.name===name);
+    if(info){
+      const color=checkinData.china[info.adcode+''];
+      showHint(`${info.name}（${info.province}）`);
+    }
+  }
+}
+
+function onChartDblClick(params){
+  if(!params.name)return;
+  const name=params.name;
+  
+  if(viewingCountry){
+    // In country detail: double-click toggles checkin
+    const c=countryDetailRegions.find(r=>r.name===name||r.cnName===name);
+    if(c){
+      if(activeTab==='world'){
+        doWorldSubCheckin(viewingCountry,c.name,COLORS[0]);
+      } else {
+        doCheckin(c.adcode+'',COLORS[0]);
+      }
+    }
+    return;
+  }
+  
+  if(activeTab==='world'){
+    const ri=COUNTRY_REGIONS[name];
+    if(ri){
+      enterCountryDetail(name);
+    } else {
+      toggleItem(name,'world');
+    }
+  } else {
+    // China double-click to checkin
+    const info=chinaCityInfo.find(c=>c.name===name);
+    if(info){
+      doCheckin(info.adcode+'',COLORS[0]);
+      refreshAll();
+    }
+  }
+}
+
+function showHint(text){
+  const hint=document.getElementById('hint-box');
+  hint.textContent=text;
+  hint.classList.add('show');
+  clearTimeout(hint._timer);
+  hint._timer=setTimeout(()=>hint.classList.remove('show'),3000);
 }
 
 // ==================== CHECKIN LOGIC ====================
-function doCheckin(id,color){
-  color=color||COLORS[0];
-  const info=chinaCityInfo.find(c=>c.adcode+''===id);
-  if(checkinData.china[id]){
-    delete checkinData.china[id];
-    showToast('取消打卡: '+(info?info.name:id));
-  }else{
-    checkinData.china[id]=color;
-    showToast('\u{1F389} 打卡: '+(info?info.name:id));
+function doCheckin(adcode,color){
+  if(checkinData.china[adcode]){
+    // Already checked in - show color picker
+    showColorPicker(adcode,chinaCityInfo.find(c=>c.adcode+''===adcode)?.name||adcode,'china',checkinData.china[adcode]);
+  } else {
+    checkinData.china[adcode]=color||COLORS[0];
+    saveData();
+    showToast('✅ 打卡成功！');
+    refreshAll();
   }
-  saveData();refreshAll();
 }
 
 function doWorldCheckin(name,color){
-  color=color||COLORS[0];
   if(checkinData.world[name]){
-    delete checkinData.world[name];
-    showToast('取消: '+name);
-  }else{
-    checkinData.world[name]=color;
-    showToast('\u{1F389} 打卡: '+name);
+    showColorPicker(name,name,'world',checkinData.world[name]);
+  } else {
+    checkinData.world[name]=color||COLORS[0];
+    saveData();
+    showToast('✅ 打卡成功！');
+    refreshAll();
   }
-  saveData();refreshAll();
 }
 
 function doWorldSubCheckin(country,name,color){
-  color=color||COLORS[0];
   const key=country+'|'+name;
   if(checkinData.worldSub[key]){
-    delete checkinData.worldSub[key];
-    showToast('取消: '+getRegionChineseName(country,name));
-  }else{
-    checkinData.worldSub[key]=color;
-    showToast('\u{1F389} 打卡: '+getRegionChineseName(country,name));
-  }
-  saveData();refreshAll();
-}
-
-function showItemInfo(clickId){
-  if(activeTab==='china'){
-    const info=chinaCityInfo.find(c=>c.name===clickId);
-    if(!info)return;
-    const color=checkinData.china[info.adcode+''];
-    if(color){showColorPicker(info.adcode+'',info.name,'china',color)}
-    else{
-      document.getElementById('hint-text').textContent=`${info.name}（${info.province}）- 双击打卡`;
-      document.getElementById('hint-box').classList.add('show');
-    }
-  }else if(viewingCountry){
-    const ri=COUNTRY_REGIONS[viewingCountry];
-    const cnName=getRegionChineseName(viewingCountry,clickId);
-    const key=viewingCountry+'|'+clickId;
-    if(checkinData.worldSub[key]){showColorPicker(clickId,cnName,'worldSub',checkinData.worldSub[key])}
-    else{
-      document.getElementById('hint-box').textContent=`📍 ${cnName} — 双击打卡`;
-      document.getElementById('hint-box').classList.add('show');
-    }
-  }else{
-    const info=worldCountryInfo.find(c=>c.name===clickId);
-    if(!info)return;
-    const ri=COUNTRY_REGIONS[clickId];
-    const color=checkinData.world[clickId];
-    if(color){showColorPicker(clickId,info.name,'world',color)}
-    else{
-      let t=`${info.name}`;
-      if(ri)t+=`（${ri.count}个${ri.type}）`;
-      document.getElementById('hint-box').textContent=t;
-      document.getElementById('hint-box').classList.add('show');
-    }
+    const cn=getRegionChineseName(country,name);
+    showColorPicker(name,cn,'worldSub',checkinData.worldSub[key]);
+  } else {
+    checkinData.worldSub[key]=color||COLORS[0];
+    saveData();
+    showToast('✅ 打卡成功！');
+    refreshAll();
   }
 }
 
@@ -469,7 +634,7 @@ function makeChinaOption(){
       name:c.name,
       itemStyle:{areaColor:color||UNVISITED_COLOR,borderColor:'#1e293b',borderWidth:0.5},
       emphasis:{itemStyle:{areaColor:color||'#f59e0b',shadowBlur:8,shadowColor:color||'#f59e0b'}}
-    }
+    };
   });
   return{
     backgroundColor:'#0f172a',
@@ -482,7 +647,6 @@ function makeChinaOption(){
         const info=chinaCityInfo.find(c=>c.name===p.name);
         if(!info)return p.name;
         const color=checkinData.china[info.adcode+''];
-        const cn=getRegionChineseName('',info.name)||info.name;
         return`<div><b>${info.name}</b><br><span style="color:#94a3b8">${info.province}</span><br><span style="color:${color||'#f59e0b'}">${color?'✅ 已打卡':'⭕ 未打卡'}</span></div>`;
       }
     },
@@ -499,13 +663,11 @@ function makeChinaOption(){
 function makeWorldOption(){
   const data=worldCountryInfo.map(c=>{
     const color=checkinData.world[c.name];
-    const ci=K_CONTINENTS.indexOf(c.region||'');
-    const hue=(ci>=0?ci*36:200)%360;
     return{
       name:c.name,
       itemStyle:{areaColor:color||UNVISITED_COLOR,borderColor:'#1e293b',borderWidth:0.5},
       emphasis:{itemStyle:{areaColor:color||'#f59e0b',shadowBlur:8,shadowColor:color||'#f59e0b'}}
-    }
+    };
   });
   return{
     backgroundColor:'#0f172a',
@@ -537,44 +699,80 @@ function makeWorldOption(){
 function makeCountryDetailOption(countryName){
   const ri=COUNTRY_REGIONS[countryName];
   if(!ri)return{};
-  
+
   let data=[],regions=[];
-  
-  if(countryName==='United States of America'&&ri.regions){
-    // US states with full data
-    regions=ri.regions.map((name,i)=>({name,index:i}));
-    data=regions.map(r=>{
-      const color=checkinData.worldSub[countryName+'|'+r.name];
-      return{name:r.name,itemStyle:{areaColor:color||UNVISITED_COLOR,borderColor:'#1e293b',borderWidth:0.5},
-        emphasis:{itemStyle:{areaColor:color||'#f59e0b',shadowBlur:8,shadowColor:color||'#f59e0b'}}}
+  const prefix=countryName+'|';
+
+  // Use real GeoJSON for US states if available
+  if(countryName==='United States of America'&&usStatesGeo){
+    regions=usStatesGeo.features.map(f=>f.properties.name).filter(Boolean);
+    data=regions.map(name=>{
+      const color=checkinData.worldSub[prefix+name];
+      return{
+        name,
+        itemStyle:{areaColor:color||UNVISITED_COLOR,borderColor:'#1e293b',borderWidth:0.5},
+        emphasis:{itemStyle:{areaColor:color||'#f59e0b',shadowBlur:8,shadowColor:color||'#f59e0b'}}
+      };
     });
-  }else if(countryName==='Iran'&&ri.regions){
+  } else if(countryName==='Iran'&&ri.regions){
     regions=ri.regions.map(name=>({name}));
     data=regions.map(r=>{
-      const color=checkinData.worldSub[countryName+'|'+r.name];
+      const color=checkinData.worldSub[prefix+r.name];
       return{name:r.name,itemStyle:{areaColor:color||UNVISITED_COLOR,borderColor:'#1e293b',borderWidth:0.5},
-        emphasis:{itemStyle:{areaColor:color||'#f59e0b',shadowBlur:8,shadowColor:color||'#f59e0b'}}}
+        emphasis:{itemStyle:{areaColor:color||'#f59e0b',shadowBlur:8,shadowColor:color||'#f59e0b'}};
     });
-  }else{
-    // Generic regions
+  } else if(ri.regions){
+    regions=ri.regions.map(name=>({name,cnName:getRegionChineseName(countryName,name)}));
+    data=regions.map(r=>{
+      const color=checkinData.worldSub[prefix+r.name];
+      return{name:r.name,itemStyle:{areaColor:color||UNVISITED_COLOR,borderColor:'#1e293b',borderWidth:0.5},
+        emphasis:{itemStyle:{areaColor:color||'#f59e0b',shadowBlur:8,shadowColor:color||'#f59e0b'}};
+    });
+  } else {
     const count=ri.count||50;
     regions=Array.from({length:count},(_,i)=>({name:`${ri.type}${(i+1)}`}));
     data=regions.map(r=>{
-      const color=checkinData.worldSub[countryName+'|'+r.name];
+      const color=checkinData.worldSub[prefix+r.name];
       return{name:r.name,itemStyle:{areaColor:color||UNVISITED_COLOR,borderColor:'#1e293b',borderWidth:0.5},
-        emphasis:{itemStyle:{areaColor:color||'#f59e0b',shadowBlur:8}}}
+        emphasis:{itemStyle:{areaColor:color||'#f59e0b',shadowBlur:8}};
     });
   }
-  
-  // Get center coordinates from world map data for the country
-  let center=[0,0];
-  const countryInfo=worldCountryInfo.find(c=>c.name===countryName);
-  if(countryName==='United States of America')center=[-98.5,39.8];
-  else if(countryName==='Iran')center=[53.7,32.4];
-  else if(countryInfo){
-    // Try to get center from geo data
+
+  let center=[0,0],zoom=1;
+  if(countryName==='United States of America'){center=[-98.5,39.8];zoom=1.5;}
+  else if(countryName==='Iran'){center=[53.7,32.4];zoom=4;}
+
+  // Build option - use real GeoJSON map if available
+  if(countryName==='United States of America'&&usStatesGeo){
+    return{
+      backgroundColor:'#0f172a',
+      tooltip:{
+        trigger:'item',
+        backgroundColor:'rgba(15,23,42,.95)',
+        borderColor:'#334155',
+        textStyle:{color:'#e2e8f0',fontSize:12},
+        formatter:p=>{
+          const cn=getRegionChineseName(countryName,p.name);
+          const key=prefix+p.name;
+          const color=checkinData.worldSub[key];
+          return`<div><b>${cn}</b><br><span style="color:${color||'#f59e0b'}">${color?'✅ 已打卡':'⭕ 未打卡'}</span></div>`;
+        }
+      },
+      series:[{
+        type:'map',
+        map:'us_states_detail',
+        roam:true,
+        zoom,
+        center,
+        scaleLimit:{min:0.5,max:20},
+        label:{show:false},
+        itemStyle:{borderColor:'#1e293b',borderWidth:0.5},
+        emphasis:{label:{show:true,fontSize:10,color:'#1a1a2e',fontWeight:'bold'}},
+        data
+      }]
+    };
   }
-  
+
   return{
     backgroundColor:'#0f172a',
     tooltip:{
@@ -584,7 +782,7 @@ function makeCountryDetailOption(countryName){
       textStyle:{color:'#e2e8f0',fontSize:12},
       formatter:p=>{
         const cn=getRegionChineseName(countryName,p.name);
-        const key=countryName+'|'+p.name;
+        const key=prefix+p.name;
         const color=checkinData.worldSub[key];
         return`<div><b>${cn}</b><br><span style="color:${color||'#f59e0b'}">${color?'✅ 已打卡':'⭕ 未打卡'}</span></div>`;
       }
@@ -593,8 +791,8 @@ function makeCountryDetailOption(countryName){
       type:'map',
       map:countryName,
       roam:true,
-      zoom:1,
-      center:center,
+      zoom,
+      center,
       scaleLimit:{min:0.5,max:20},
       label:{show:false},
       itemStyle:{borderColor:'#1e293b',borderWidth:0.5},
@@ -605,70 +803,47 @@ function makeCountryDetailOption(countryName){
 }
 
 // ==================== COUNTRY DETAIL ====================
-let countryDetailRegions=[];
 function enterCountryDetail(countryName){
   const ri=COUNTRY_REGIONS[countryName];
   if(!ri){showToast('暂无详细数据');return;}
-  
+
   viewingCountry=countryName;
   countryDetailRegions=[];
-  
+
   if(ri.regions){
     countryDetailRegions=ri.regions.map(name=>({name,cnName:getRegionChineseName(countryName,name)}));
-  }else{
+  } else {
     const count=ri.count||50;
     for(let i=1;i<=count;i++)countryDetailRegions.push({name:`${ri.type}${i}`,cnName:`${ri.type}${i}`});
   }
-  
+
   document.getElementById('country-detail-name').textContent=ri.name;
   document.getElementById('country-detail-count').textContent=`${countryDetailRegions.length}个${ri.type}`;
   document.getElementById('country-detail-header').classList.add('show');
-  
-  renderCountryDetailMap(countryName,ri);
-  renderStats();
-  renderFilterSelect();
-  renderItemList();
-}
+  document.getElementById('back-btn').style.display='inline';
+  document.getElementById('hint-box').classList.remove('show');
 
-function renderCountryDetailMap(countryName,ri){
-  if((countryName==='United States of America'||countryName==='Iran')&&ri.regions){
-    // Generate pseudo-GeoJSON for US/Iran from list of regions
+  // Register map
+  if(countryName==='United States of America'&&usStatesGeo){
+    try{
+      // Transform usStatesGeo to use state names as IDs
+      const usGeo=JSON.parse(JSON.stringify(usStatesGeo));
+      echarts.registerMap('us_states_detail',usGeo);
+    }catch(e){console.error('US reg err',e)}
+  } else if((countryName==='Iran')&&ri.regions){
     const geoData=generatePseudoGeoJSON(countryName,ri.regions);
     try{echarts.registerMap(countryName,geoData)}catch(e){console.error(e)}
-    chart.setOption(makeCountryDetailOption(countryName),true);
-  }else{
-    // Show as chart without map
-    chart.clear();
-    chart.setOption({
-      backgroundColor:'#0f172a',
-      tooltip:{trigger:'axis',axisPointer:{type:'shadow'},
-        backgroundColor:'rgba(15,23,42,.95)',borderColor:'#334155',textStyle:{color:'#e2e8f0'}},
-      grid:{left:10,right:10,top:10,bottom:30,containLabel:true},
-      xAxis:{type:'category',data:countryDetailRegions.map(r=>r.cnName||r.name),axisLabel:{color:'#94a3b8',fontSize:10,rotate:45,interval:0},axisLine:{lineStyle:{color:'#334155'}}},
-      yAxis:{type:'value',axisLabel:{color:'#94a3b8',fontSize:10},splitLine:{lineStyle:{color:'#1e293b'}},axisLine:{lineStyle:{color:'#334155'}}},
-      series:[{
-        type:'bar',
-        data:countryDetailRegions.map(r=>{
-          const color=checkinData.worldSub[countryName+'|'+r.name];
-          return{value:1,name:r.cnName||r.name,itemStyle:{color:color||UNVISITED_COLOR,borderRadius:[4,4,0,0]}};
-        }),
-        label:{show:true,fontSize:9,color:'#fff',position:'top',formatter:p=>{
-          const color=checkinData.worldSub[countryName+'|'+p.name];
-          return color?'✓':'';
-        }},
-        itemStyle:{borderRadius:[4,4,0,0]},
-        emphasis:{itemStyle:{color:'#f59e0b'}}
-      }]
-    });
   }
+
+  chart.setOption(makeCountryDetailOption(countryName),true);
+  renderStats();renderFilterSelect();renderItemList();renderLegend();
 }
 
 function generatePseudoGeoJSON(countryName,regions){
-  // Create a simple bounding box for the country
   let bounds={minX:0,maxX:0,minY:0,maxY:0};
   if(countryName==='United States of America'){
     bounds={minX:-125,maxX:-66,minY:24,maxY:50};
-  }else if(countryName==='Iran'){
+  } else if(countryName==='Iran'){
     bounds={minX:44,maxX:63,minY:25,maxY:40};
   }
   const cols=Math.ceil(Math.sqrt(regions.length));
@@ -676,7 +851,7 @@ function generatePseudoGeoJSON(countryName,regions){
     const col=i%cols;
     const row=Math.floor(i/cols);
     const w=(bounds.maxX-bounds.minX)/cols;
-    const h=(bounds.maxY-bounds.minY)/cols;
+    const h=(bounds.maxY-bounds.minY)/Math.ceil(regions.length/cols);
     const x1=bounds.minX+col*w;
     const y1=bounds.maxY-row*h;
     const x2=x1+w;
@@ -690,13 +865,17 @@ function goBack(){
   viewingCountry=null;
   countryDetailRegions=[];
   document.getElementById('country-detail-header').classList.remove('show');
+  document.getElementById('back-btn').style.display='none';
   document.getElementById('hint-box').classList.remove('show');
-  document.getElementById('map').innerHTML='';
-  initChart();
-  echarts.registerMap('china_cities',chinaGeo);
-  echarts.registerMap('world_countries',worldGeo);
-  if(activeTab==='china')chart.setOption(makeChinaOption(),true);
-  else chart.setOption(makeWorldOption(),true);
+
+  try{echarts.registerMap('china_cities',chinaGeo)}catch(e){}
+  try{echarts.registerMap('world_countries',worldGeo)}catch(e){}
+
+  if(activeTab==='china'){
+    chart.setOption(makeChinaOption(),true);
+  } else {
+    chart.setOption(makeWorldOption(),true);
+  }
   renderStats();renderFilterSelect();renderItemList();renderLegend();
 }
 
@@ -707,10 +886,13 @@ function switchTab(tab){
   document.getElementById('search-input').value='';
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
   if(!chart||!chinaGeo||!worldGeo)return;
-  echarts.registerMap('china_cities',chinaGeo);
-  echarts.registerMap('world_countries',worldGeo);
+
+  try{echarts.registerMap('china_cities',chinaGeo)}catch(e){}
+  try{echarts.registerMap('world_countries',worldGeo)}catch(e){}
+
   if(tab==='china')chart.setOption(makeChinaOption(),true);
   else chart.setOption(makeWorldOption(),true);
+
   renderStats();renderFilterSelect();renderItemList();renderLegend();
   document.getElementById('hint-box').classList.remove('show');
 }
@@ -720,15 +902,219 @@ function toggleItem(name,tab){
   if(tab==='china'){
     const c=chinaCityInfo.find(x=>x.name===name);
     if(c)doCheckin(c.adcode+'',COLORS[0]);
-  }else if(viewingCountry){
+  } else if(tab==='worldSub'){
     doWorldSubCheckin(viewingCountry,name,COLORS[0]);
-  }else{
+  } else if(tab==='world'){
     const ri=COUNTRY_REGIONS[name];
-    if(ri&&!checkinData.world[name]&&ri.regions){
+    if(ri&&ri.regions){
       enterCountryDetail(name);return;
     }
     doWorldCheckin(name,COLORS[0]);
   }
+}
+
+// ==================== CONTEXT MENU ====================
+function showContextMenu(e,name,tab,id,country){
+  e.preventDefault();
+  e.stopPropagation();
+  lastCtx={name,tab,id,country};
+  const menu=document.getElementById('ctx-menu');
+  menu.style.display='block';
+  menu.style.left=e.clientX+'px';
+  menu.style.top=e.clientY+'px';
+}
+
+function hideContextMenu(){
+  document.getElementById('ctx-menu').style.display='none';
+}
+
+document.addEventListener('click',hideContextMenu);
+
+function ctxChangeColor(){
+  hideContextMenu();
+  const{name,tab,id,country}=lastCtx;
+  if(tab==='china'){
+    const c=chinaCityInfo.find(x=>x.adcode+''===id||x.name===name);
+    if(c)showColorPicker(c.adcode+'',c.name,'china',checkinData.china[c.adcode+'']);
+  } else if(tab==='worldSub'){
+    const cn=getRegionChineseName(country,name);
+    showColorPicker(name,cn,'worldSub',checkinData.worldSub[country+'|'+name]);
+  } else {
+    showColorPicker(name,name,'world',checkinData.world[name]);
+  }
+}
+
+function ctxAddPhoto(){
+  hideContextMenu();
+  const{name,tab,id,country}=lastCtx;
+  openPhotoModal(name,tab,id,country);
+}
+
+function ctxViewPhotos(){
+  hideContextMenu();
+  const{name,tab,id,country}=lastCtx;
+  openPhotoModal(name,tab,id,country);
+}
+
+function ctxUncheck(){
+  hideContextMenu();
+  const{name,tab,id,country}=lastCtx;
+  if(tab==='china'){
+    delete checkinData.china[id];
+    saveData();refreshAll();showToast('已取消打卡');
+  } else if(tab==='worldSub'){
+    delete checkinData.worldSub[country+'|'+name];
+    saveData();refreshAll();showToast('已取消打卡');
+  } else {
+    delete checkinData.world[name];
+    saveData();refreshAll();showToast('已取消打卡');
+  }
+}
+
+// ==================== PHOTO FEATURE ====================
+function getPhotoKey(name,tab,id,country){
+  if(tab==='china')return'china:'+id;
+  if(tab==='worldSub')return'worldSub:'+country+'|'+name;
+  return'world:'+name;
+}
+
+function getPhotoRegionLabel(name,tab,country){
+  if(tab==='china'){
+    const c=chinaCityInfo.find(x=>x.name===name);
+    return c?`${c.name}（${c.province}）`:name;
+  }
+  if(tab==='worldSub'){
+    return getRegionChineseName(country,name);
+  }
+  return name;
+}
+
+function loadPhotos(key){
+  try{
+    const stored=localStorage.getItem('checkin_photos_'+key);
+    return stored?JSON.parse(stored):[];
+  }catch(e){return[];}
+}
+
+function savePhotos(key,photos){
+  try{
+    if(photos.length===0){
+      localStorage.removeItem('checkin_photos_'+key);
+    } else {
+      localStorage.setItem('checkin_photos_'+key,JSON.stringify(photos));
+    }
+  }catch(e){showToast('存储空间不足，照片保存失败');}
+}
+
+let currentPhotoCtx={name:'',tab:'',id:'',country:''};
+
+function openPhotoModal(name,tab,id,country){
+  currentPhotoCtx={name,tab,id,country};
+  const key=getPhotoKey(name,tab,id,country);
+  const photos=loadPhotos(key);
+  const label=getPhotoRegionLabel(name,tab,country);
+  document.getElementById('photo-region-title').textContent='📍 '+label;
+  document.getElementById('photo-caption-input').value='';
+  renderPhotoGrid(key,photos);
+  document.getElementById('photo-modal').classList.add('show');
+}
+
+function renderPhotoGrid(key,photos){
+  const grid=document.getElementById('photo-grid');
+  let html='';
+  photos.forEach((p,i)=>{
+    html+=`<div class="photo-thumb" onclick="openPhotoViewer('${key}',${i})">
+      <img src="${p.data}" alt="photo">
+      <button class="photo-del" onclick="event.stopPropagation();deletePhoto('${key}',${i})">×</button>
+    </div>`;
+  });
+  // Add button
+  html+=`<label class="photo-add-btn" onclick="event.stopPropagation()">
+    +
+    <input type="file" accept="image/*" multiple onchange="handlePhotoAdd(this.files)">
+  </label>`;
+  grid.innerHTML=html||'<div class="photo-empty">暂无照片，点击+添加</div>';
+}
+
+function handlePhotoAdd(files){
+  const{name,tab,id,country}=currentPhotoCtx;
+  const key=getPhotoKey(name,tab,id,country);
+  const photos=loadPhotos(key);
+  const maxSize=500; // max dimension in KB base64 estimate
+  let added=0;
+  Array.from(files).forEach(f=>{
+    if(photos.length>=20){showToast('最多20张照片');return;}
+    const reader=new FileReader();
+    reader.onload=e=>{
+      let data=e.target.result;
+      // Compress if too large
+      if(data.length>800*1024){
+        data=compressImage(data,maxSize);
+      }
+      photos.push({data,date:new Date().toISOString(),caption:''});
+      savePhotos(key,photos);
+      renderPhotoGrid(key,photos);
+      if(added===0)showToast(`已添加 ${files.length} 张照片`);
+      added++;
+    };
+    reader.readAsDataURL(f);
+  });
+}
+
+function compressImage(dataUrl,maxKB){
+  const img=new Image();
+  img.src=dataUrl;
+  const c=document.createElement('canvas');
+  const ratio=Math.sqrt(800/maxKB);
+  c.width=img.width/ratio;
+  c.height=img.height/ratio;
+  c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+  return c.toDataURL('image/jpeg',0.7);
+}
+
+function deletePhoto(key,idx){
+  const photos=loadPhotos(key);
+  photos.splice(idx,1);
+  savePhotos(key,photos);
+  renderPhotoGrid(key,photos);
+}
+
+function clearPhotos(){
+  const{name,tab,id,country}=currentPhotoCtx;
+  const key=getPhotoKey(name,tab,id,country);
+  if(!confirm('确定清除所有照片？'))return;
+  savePhotos(key,[]);
+  renderPhotoGrid(key,[]);
+  showToast('已清除全部照片');
+}
+
+function openPhotoViewer(key,idx){
+  const photos=loadPhotos(key);
+  if(photos.length===0)return;
+  photoViewerList=photos;
+  photoViewerIdx=idx;
+  showPhotoAtIdx();
+  document.getElementById('photo-viewer').classList.add('show');
+}
+
+function showPhotoAtIdx(){
+  const p=photoViewerList[photoViewerIdx];
+  if(!p)return;
+  document.getElementById('pv-img').src=p.data;
+  document.getElementById('pv-info').textContent=p.caption||'';
+  document.getElementById('pv-counter').textContent=`${photoViewerIdx+1} / ${photoViewerList.length}`;
+  document.getElementById('pv-prev').style.display=photoViewerIdx>0?'flex':'none';
+  document.getElementById('pv-next').style.display=photoViewerIdx<photoViewerList.length-1?'flex':'none';
+}
+
+function showPrevPhoto(){
+  if(photoViewerIdx>0){photoViewerIdx--;showPhotoAtIdx();}
+}
+function showNextPhoto(){
+  if(photoViewerIdx<photoViewerList.length-1){photoViewerIdx++;showPhotoAtIdx();}
+}
+function closePhotoViewer(){
+  document.getElementById('photo-viewer').classList.remove('show');
 }
 
 // ==================== RENDER ====================
@@ -743,14 +1129,14 @@ function renderStats(){
           <div class="stat-chip"><span class="num">${total}</span><span class="label">城市</span></div>
           <div class="stat-chip"><span class="num">${provs.size}</span><span class="label">省份</span></div>
           <div class="stat-chip"><span class="num">${pct}%</span><span class="label">覆盖</span></div>`;
-  }else if(viewingCountry){
+  } else if(viewingCountry){
     const ri=COUNTRY_REGIONS[viewingCountry];
     const prefix=viewingCountry+'|';
     const visited=Object.keys(checkinData.worldSub).filter(k=>k.startsWith(prefix)).length;
     const total=countryDetailRegions.length;
     html=`<div class="stat-chip visited"><span class="num">${visited}</span><span class="label">已打卡</span></div>
           <div class="stat-chip"><span class="num">${total}</span><span class="label">${ri?ri.type:''}</span></div>`;
-  }else{
+  } else {
     const total=worldCountryInfo.length;
     const visited=Object.keys(checkinData.world).length;
     const pct=total>0?(visited/total*100).toFixed(1):'0';
@@ -767,9 +1153,9 @@ function renderFilterSelect(){
   if(activeTab==='china'){
     const provs=[...new Set(chinaCityInfo.map(c=>c.province))].sort((a,b)=>a.localeCompare(b,'zh-CN'));
     sel.innerHTML='<option value="all">全部省份</option>'+provs.map(p=>`<option value="${p}">${p}</option>`).join('');
-  }else if(viewingCountry){
+  } else if(viewingCountry){
     sel.innerHTML='<option value="all">全部</option>';
-  }else{
+  } else {
     const conts=[...new Set(worldCountryInfo.map(c=>c.region))].sort();
     sel.innerHTML='<option value="all">全部大洲</option>'+conts.map(r=>`<option value="${r}">${K_CONT_CH[r]||r}</option>`).join('');
   }
@@ -778,9 +1164,8 @@ function renderFilterSelect(){
 function renderItemList(){
   const el=document.getElementById('item-list');
   let items=[];
-  
+
   if(activeTab==='china'){
-    // Group by province
     const grouped={};
     for(const c of chinaCityInfo){
       if(filterValue!=='all'&&c.province!==filterValue)continue;
@@ -794,11 +1179,10 @@ function renderItemList(){
       const total=cities.length;
       html+=`<div class="item-group"><div class="group-header" onclick="toggleGroup(this)">
         <span class="group-name">${province}</span><span class="group-count">${visited}/${total}</span><span class="toggle-icon">▼</span></div>
-        <div class="group-items">${cities.map(c=>makeItemRow(c.name,'china',checkinData.china[c.adcode+''],c.province)).join('')}</div></div>`;
+        <div class="group-items">${cities.map(c=>makeItemRow(c.name,'china',c.adcode+'',checkinData.china[c.adcode+''])).join('')}</div></div>`;
     }
     el.innerHTML=html||'<div class="empty-hint">无匹配项</div>';
-  }else if(viewingCountry){
-    // Country sub-regions
+  } else if(viewingCountry){
     const ri=COUNTRY_REGIONS[viewingCountry];
     let filtered=countryDetailRegions;
     if(searchQuery){
@@ -812,8 +1196,7 @@ function renderItemList(){
         <span class="group-name">${ri?ri.name:viewingCountry}</span>
         <span class="group-count">${visited}/${filtered.length}</span></div></div>
       ${filtered.map(r=>makeWorldSubRow(r.name,viewingCountry,checkinData.worldSub[viewingCountry+'|'+r.name])).join('')}`||'<div class="empty-hint">无匹配项</div>';
-  }else{
-    // World countries grouped by continent
+  } else {
     const grouped={};
     for(const c of worldCountryInfo){
       if(filterValue!=='all'&&c.region!==filterValue)continue;
@@ -828,28 +1211,68 @@ function renderItemList(){
       const visited=cntries.filter(c=>checkinData.world[c.name]).length;
       html+=`<div class="item-group"><div class="group-header" onclick="toggleGroup(this)">
         <span class="group-name">${cn}</span><span class="group-count">${visited}/${cntries.length}</span><span class="toggle-icon">▼</span></div>
-        <div class="group-items">${cntries.map(c=>makeItemRow(c.name,'world',checkinData.world[c.name],null,COUNTRY_REGIONS[c.name])).join('')}</div></div>`;
+        <div class="group-items">${cntries.map(c=>makeWorldItemRow(c.name,'world',checkinData.world[c.name],COUNTRY_REGIONS[c.name])).join('')}</div></div>`;
     }
     el.innerHTML=html||'<div class="empty-hint">无匹配项</div>';
   }
 }
 
-function makeItemRow(name,tab,color,sub,ri){
+function makeItemRow(name,tab,id,color){
   const checked=!!color;
-  let subText=sub||'';
-  if(ri)subText=`${ri.count}个${ri.type}`;
-  const cnName=name;
-  return`<div class="item-row${checked?' visited':''}" onclick="toggleItem('${name.replace(/'/g,"\\'")}','${tab}')">
-    <span class="item-name">${cnName}</span>${subText?`<span class="item-sub">${subText}</span>`:''}
-    <span class="item-dot${checked?' checked':''}" ${color?`style="background:${color};border-color:${color}"`:''}>${checked?'✓':''}</span></div>`;
+  const photoKey=getPhotoKey(name,tab,id,'');
+  const hasPhotos=(()=>{try{return localStorage.getItem('checkin_photos_'+photoKey)}catch(e){return null}})();
+  return`<div class="item-row${checked?' visited':''}" 
+    onclick="toggleItem('${name.replace(/'/g,"\\'")}','${tab}')"
+    oncontextmenu="showContextMenu(event,'${name.replace(/'/g,"\\'")}','${tab}','${id}','')"
+    ondblclick="onItemDblClick('${name.replace(/'/g,"\\'")}','${tab}','${id}','')">
+    <span class="item-name">${name}</span>
+    ${hasPhotos?'<span style="color:var(--accent);font-size:.65rem">📷</span>':''}
+    <span class="item-dot${checked?' checked':''}" ${color?`style="background:${color};border-color:${color}"`:''}>${checked?'✓':''}</span>
+  </div>`;
+}
+
+function onItemDblClick(name,tab,id,country){
+  if(tab==='china'){
+    doCheckin(id,COLORS[0]);refreshAll();
+  } else if(tab==='worldSub'){
+    doWorldSubCheckin(country,name,COLORS[0]);refreshAll();
+  } else {
+    toggleItem(name,'world');
+  }
 }
 
 function makeWorldSubRow(name,country,color){
   const checked=!!color;
   const cn=getRegionChineseName(country,name);
-  return`<div class="item-row${checked?' visited':''}" onclick="toggleItem('${name.replace(/'/g,"\\'")}','worldSub')">
+  const photoKey=getPhotoKey(name,'worldSub','',country);
+  const hasPhotos=(()=>{try{return localStorage.getItem('checkin_photos_'+photoKey)}catch(e){return null}})();
+  return`<div class="item-row${checked?' visited':''}" 
+    onclick="toggleItem('${name.replace(/'/g,"\\'")}','worldSub')"
+    oncontextmenu="showContextMenu(event,'${name.replace(/'/g,"\\'")}','worldSub','','${country}')"
+    ondblclick="onItemDblClick('${name.replace(/'/g,"\\'")}','worldSub','','${country}')">
     <span class="item-name">${cn}</span>
-    <span class="item-dot${checked?' checked':''}" ${color?`style="background:${color};border-color:${color}"`:''}>${checked?'✓':''}</span></div>`;
+    ${hasPhotos?'<span style="color:var(--accent);font-size:.65rem">📷</span>':''}
+    <span class="item-dot${checked?' checked':''}" ${color?`style="background:${color};border-color:${color}"`:''}>${checked?'✓':''}</span>
+  </div>`;
+}
+
+function makeWorldItemRow(name,tab,color,ri){
+  const checked=!!color;
+  const hasSub=ri&&ri.regions;
+  const subText=ri?`${ri.count}个${ri.type}`:'';
+  const photoKey=getPhotoKey(name,'world','','');
+  const hasPhotos=(()=>{try{return localStorage.getItem('checkin_photos_'+photoKey)}catch(e){return null}})();
+  const rowClass=hasSub&&!checked?'enter-country':'';
+  const dotContent=hasSub&&!checked?'→':(checked?'✓':'');
+  const dotStyle=hasSub&&!checked?'border-color:var(--accent)':(color?`background:${color};border-color:${color}`:'');
+  return`<div class="item-row${checked?' visited':''} ${rowClass}" 
+    onclick="toggleItem('${name.replace(/'/g,"\\'")}','${tab}')"
+    oncontextmenu="showContextMenu(event,'${name.replace(/'/g,"\\'")}','${tab}','','')">
+    <span class="item-name">${name}${hasSub&&!checked?' <span style="color:var(--accent);font-size:.65rem">(进)</span>':''}</span>
+    ${hasPhotos?'<span style="color:var(--accent);font-size:.65rem">📷</span>':''}
+    ${subText?`<span class="item-sub">${subText}</span>`:''}
+    <span class="item-dot" ${dotStyle?`style="${dotStyle}"`:''}>${dotContent}</span>
+  </div>`;
 }
 
 function toggleGroup(header){
@@ -861,16 +1284,19 @@ function toggleGroup(header){
 function renderLegend(){
   const legend=document.getElementById('legend');
   if(viewingCountry){
-    const ri=COUNTRY_REGIONS[viewingCountry];
-    legend.innerHTML=`<span>🟩 已打卡</span><span>⬜ 未打卡</span>`;
-  }else{
-    legend.innerHTML=`<span>🟩 已打卡</span><span>⬜ 未打卡</span><span style="color:#f59e0b">双击打卡</span>`;
+    legend.innerHTML=`<span style="color:var(--check)">🟩 已打卡</span> <span style="color:var(--unvisited)">⬜ 未打卡</span> <span style="color:var(--accent)">⭕ 双击打卡 · 右键更多操作</span>`;
+  } else if(activeTab==='china'){
+    legend.innerHTML=`<span style="color:var(--check)">🟩 已打卡</span> <span style="color:var(--unvisited)">⬜ 未打卡</span> <span style="color:var(--accent)">⭕ 双击打卡 · 右键更多操作</span>`;
+  } else {
+    legend.innerHTML=`<span style="color:var(--check)">🟩 已打卡</span> <span style="color:var(--unvisited)">⬜ 未打卡</span> <span style="color:var(--accent)">悬停高亮 · 双击进入详情</span>`;
   }
 }
 
 function refreshAll(){
+  if(!chart)return;
   if(activeTab==='china'&&!viewingCountry)chart.setOption(makeChinaOption(),true);
   else if(activeTab==='world'&&!viewingCountry)chart.setOption(makeWorldOption(),true);
+  else if(viewingCountry)chart.setOption(makeCountryDetailOption(viewingCountry),true);
   renderStats();renderFilterSelect();renderItemList();renderLegend();
 }
 
@@ -898,40 +1324,131 @@ function applyColor(){
   const{id,type,current}=colorPickerTarget;
   if(type==='china')checkinData.china[id]=current;
   else if(type==='world')checkinData.world[id]=current;
-  else if(type==='worldSub')checkinData.worldSub[viewingCountry+'|'+id]=current;
+  else if(type==='worldSub')checkinData.worldSub[id]=current;
   saveData();closeModal('color-modal');refreshAll();showToast('🎨 颜色已更新');
 }
 
-// ==================== IMAGE ====================
-function generateImage(){
-  showToast('生成图片...');
-  setTimeout(()=>{
-    try{
-      const url=chart.getDataURL({type:'png',pixelRatio:2,backgroundColor:'#0f172a'});
-      const canvas=document.getElementById('preview-canvas');
-      const ctx=canvas.getContext('2d');
-      const img=new Image();img.crossOrigin='anonymous';
-      img.onload=()=>{
-        canvas.width=img.width;canvas.height=img.height;
-        ctx.drawImage(img,0,0);
-        ctx.fillStyle='rgba(255,255,255,.4)';
-        ctx.font='14px sans-serif';
-        ctx.textAlign='right';
-        ctx.fillText('城市打卡地图',canvas.width-15,canvas.height-15);
-        document.getElementById('image-modal').classList.add('show');
-        showToast('图片已生成');
-      };
-      img.onerror=()=>showToast('图片加载失败');
-      img.src=url;
-    }catch(e){showToast('生成失败');}
-  },100);
+// ==================== IMAGE EXPORT ====================
+const IMG_SIZES={S:{w:1280,h:800},M:{w:1920,h:1200},L:{w:2560,h:1600},XL:{w:3200,h:2000}};
+
+function setImgSize(s){
+  imgExportSize=s;
+  document.querySelectorAll('.img-size-btn').forEach(b=>b.classList.toggle('active',b.dataset.size===s));
+  generateHighResImage();
 }
+
+function showImageExport(){
+  document.getElementById('img-export-modal').classList.add('show');
+  setImgSize('M');
+}
+
+function generateHighResImage(){
+  showToast('正在生成高清图片...');
+  const size=IMG_SIZES[imgExportSize]||IMG_SIZES['M'];
+  const ratio=document.getElementById('img-ratio-select').value;
+
+  let canvasW=size.w;
+  let canvasH=size.h;
+  if(ratio==='16:10'){canvasW=size.w;canvasH=Math.round(size.w*10/16);}
+  else if(ratio==='4:3'){canvasW=size.w;canvasH=Math.round(size.w*3/4);}
+  else if(ratio==='1:1'){canvasW=Math.min(size.w,size.h);canvasH=canvasW;}
+
+  const TITLE_H=70,STAT_H=36,LEGEND_H=36,FOOTER_H=30;
+  const MAP_Y=TITLE_H+STAT_H;
+  const MAP_H=canvasH-LEGEND_H-FOOTER_H-TITLE_H-STAT_H;
+
+  const canvas=document.getElementById('preview-canvas');
+  canvas.width=canvasW;canvas.height=canvasH;
+  const ctx=canvas.getContext('2d');
+
+  ctx.fillStyle='#0f172a';
+  ctx.fillRect(0,0,canvasW,canvasH);
+
+  ctx.fillStyle='#f59e0b';
+  ctx.font=`bold ${Math.round(canvasW*0.04)}px -apple-system,'PingFang SC','Microsoft YaHei',sans-serif`;
+  ctx.textAlign='center';
+  ctx.fillText('🗺️ 行万里路',canvasW/2,TITLE_H*0.65);
+
+  ctx.font=`${Math.round(canvasW*0.018)}px -apple-system,'PingFang SC','Microsoft YaHei',sans-serif`;
+  ctx.textAlign='center';
+  let statsText='';
+  if(activeTab==='china'){
+    const total=chinaCityInfo.length;
+    const visited=Object.keys(checkinData.china).length;
+    const pct=total>0?(visited/total*100).toFixed(1):'0';
+    statsText=`中国 · ${visited}个城市已打卡 · ${pct}%覆盖率`;
+  } else if(viewingCountry){
+    const ri=COUNTRY_REGIONS[viewingCountry];
+    const prefix=viewingCountry+'|';
+    const visited=Object.keys(checkinData.worldSub).filter(k=>k.startsWith(prefix)).length;
+    statsText=`${ri?ri.name:viewingCountry} · ${visited}个${ri?ri.type:''}已打卡`;
+  } else {
+    const total=worldCountryInfo.length;
+    const visited=Object.keys(checkinData.world).length;
+    const pct=total>0?(visited/total*100).toFixed(1):'0';
+    statsText=`世界 · ${visited}个国家已打卡 · ${pct}%覆盖率`;
+  }
+  ctx.fillStyle='#94a3b8';
+  ctx.fillText(statsText,canvasW/2,TITLE_H+STAT_H*0.7);
+
+  const chartDataURL=chart.getDataURL({type:'png',pixelRatio:1,backgroundColor:'#0f172a'});
+  const mapImg=new Image();
+  mapImg.crossOrigin='anonymous';
+  mapImg.onload=()=>{
+    ctx.drawImage(mapImg,0,MAP_Y,canvasW,MAP_H);
+
+    ctx.fillStyle='rgba(15,23,42,.88)';
+    ctx.fillRect(0,canvasH-LEGEND_H-FOOTER_H,canvasW,LEGEND_H);
+    ctx.strokeStyle='#334155';ctx.lineWidth=1;
+    ctx.strokeRect(0,canvasH-LEGEND_H-FOOTER_H,canvasW,LEGEND_H);
+
+    const legendY=canvasH-LEGEND_H/2-FOOTER_H+4;
+    ctx.font=`${Math.round(canvasW*0.016)}px -apple-system,'PingFang SC','Microsoft YaHei',sans-serif`;
+    ctx.textAlign='center';
+    if(activeTab==='china'){
+      const visited=Object.keys(checkinData.china).length;
+      ctx.fillStyle='#94a3b8';
+      ctx.fillText(`🟩 已打卡: ${visited} / ${chinaCityInfo.length} 个城市`,canvasW/2,legendY);
+    } else if(viewingCountry){
+      const prefix=viewingCountry+'|';
+      const visited=Object.keys(checkinData.worldSub).filter(k=>k.startsWith(prefix)).length;
+      ctx.fillStyle='#94a3b8';
+      ctx.fillText(`🟩 已打卡: ${visited} / ${countryDetailRegions.length}`,canvasW/2,legendY);
+    } else {
+      const visited=Object.keys(checkinData.world).length;
+      ctx.fillStyle='#94a3b8';
+      ctx.fillText(`🟩 已打卡: ${visited} / ${worldCountryInfo.length} 个国家`,canvasW/2,legendY);
+    }
+
+    ctx.fillStyle='#475569';
+    ctx.font=`${Math.round(canvasW*0.013)}px -apple-system,'PingFang SC','Microsoft YaHei',sans-serif`;
+    ctx.textAlign='right';
+    ctx.fillText('行万里路 · xingwanlilu.com',canvasW-15,canvasH-FOOTER_H+20);
+
+    const mp=(canvasW*canvasH/1000000).toFixed(1);
+    document.getElementById('img-sub-hint').textContent=`分辨率: ${canvasW} × ${canvasH}（约${mp}百万像素）`;
+    showToast('图片已生成');
+  };
+  mapImg.onerror=()=>{
+    ctx.fillStyle='#1a2a3a';ctx.fillRect(0,MAP_Y,canvasW,MAP_H);
+    ctx.fillStyle='#64748b';
+    ctx.font=`${Math.round(canvasW*0.03)}px -apple-system,'PingFang SC','Microsoft YaHei',sans-serif`;
+    ctx.textAlign='center';
+    ctx.fillText('地图加载中，请刷新后重试',canvasW/2,MAP_Y+MAP_H/2);
+    showToast('地图截图失败，显示占位图');
+  };
+  mapImg.src=chartDataURL;
+}
+
 function downloadImage(){
   const a=document.createElement('a');
-  a.download=`打卡地图_${new Date().toISOString().slice(0,10)}.png`;
+  const dateStr=new Date().toISOString().slice(0,10);
+  const sizeLabel={S:'小',M:'中',L:'大',XL:'超大'}[imgExportSize]||'中';
+  const regionLabel=activeTab==='china'?'中国':viewingCountry?'detail':'世界';
+  a.download=`行万里路_${regionLabel}_${sizeLabel}_${dateStr}.png`;
   a.href=document.getElementById('preview-canvas').toDataURL('image/png');
   a.click();
-  showToast('已下载');
+  showToast('图片已下载');
 }
 
 // ==================== SHARE/EXPORT/IMPORT ====================
@@ -946,7 +1463,7 @@ function copyShare(){
   navigator.clipboard.writeText(ta.value).then(()=>showToast('已复制！')).catch(()=>{ta.select();document.execCommand('copy');showToast('已复制')});
 }
 function showExport(){
-  const d={version:8,china:checkinData.china,world:checkinData.world,worldSub:checkinData.worldSub,exportedAt:new Date().toISOString()};
+  const d={version:10,china:checkinData.china,world:checkinData.world,worldSub:checkinData.worldSub,exportedAt:new Date().toISOString()};
   document.getElementById('export-data').value=JSON.stringify(d,null,2);
   document.getElementById('export-modal').classList.add('show');
 }
@@ -972,9 +1489,10 @@ function resetAll(){if(!confirm('确定清除所有打卡记录？'))return;chec
 let toastTimer=null;
 function showToast(msg){
   let el=document.getElementById('toast');
-  if(!el){el=document.createElement('div');el.id='toast';el.style.cssText='position:fixed;top:50px;left:50%;transform:translateX(-50%);background:#1e293b;color:#e2e8f0;padding:8px 18px;border-radius:20px;z-index:200;font-size:.82rem;border:1px solid #334155;pointer-events:none;transition:opacity .3s';document.body.appendChild(el)}
-  el.textContent=msg;el.style.opacity='1';
-  clearTimeout(toastTimer);toastTimer=setTimeout(()=>{el.style.opacity='0'},1800);
+  if(!el){el=document.createElement('div');el.id='toast';document.body.appendChild(el)}
+  el.textContent=msg;
+  el.style.cssText='position:fixed;top:50px;left:50%;transform:translateX(-50%);background:#1e293b;color:#e2e8f0;padding:8px 18px;border-radius:20px;z-index:200;font-size:.82rem;border:1px solid #334155;pointer-events:none;transition:opacity .3s;opacity:1';
+  clearTimeout(toastTimer);toastTimer=setTimeout(()=>{el.style.opacity='0';setTimeout(()=>{el.style.display='none'},300)},2000);
 }
 
 init();
