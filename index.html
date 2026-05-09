@@ -283,12 +283,13 @@ function initChart(){
       const name=params.name;
       const now=Date.now();
       if(lastClickName===name && now-lastClickTime<350){
-        // Double click
-        if(activeTab==='china')toggleChinaCity(name,COLORS[0]);
-        else if(viewingCountry)toggleWorldSubRegion(name,COLORS[0]);
+        // Double click — resolve city name to adcode for China
+        if(activeTab==='china'){
+          const info=chinaCityInfo.find(c=>c.name===name||c.adcode+''===name);
+          if(info){toggleChinaCity(info.adcode+'',COLORS[0])}else{showToast('未找到: '+name)}
+        }else if(viewingCountry)toggleWorldSubRegion(name,COLORS[0]);
         else toggleWorldCountry(name,COLORS[0]);
-        lastClickName='';
-        lastClickTime=0;
+        lastClickName='';lastClickTime=0;
       }else{
         // Single click
         lastClickName=name;
@@ -302,11 +303,11 @@ function initChart(){
 
 function showItemInfo(name){
   if(activeTab==='china'){
-    const info=chinaCityInfo.find(c=>c.adcode+''===name);
+    const info=chinaCityInfo.find(c=>c.name===name||c.adcode+''===name);
     if(info){
-      const color=checkinData.china[name];
+      const color=checkinData.china[info.adcode+''];
       if(color){
-        showColorPicker(name,info.name,'china',color);
+        showColorPicker(info.adcode+'',info.name,'china',color);
       }else{
         document.getElementById('hint-text').textContent=` ${info.name}（${info.province}）- 双击打卡`;
         document.getElementById('hint-box').classList.add('show');
@@ -521,13 +522,19 @@ function goBack(){
   
   // Restore map
   document.getElementById('map').innerHTML='';
+  if(chart){chart.dispose()}
   chart=echarts.init(document.getElementById('map'));
+  echarts.registerMap('china_cities',chinaGeo);
+  echarts.registerMap('world_countries',worldGeo);
   chart.on('click',params=>{
     if(params.componentType==='series'){
       const name=params.name;
       const now=Date.now();
       if(lastClickName===name && now-lastClickTime<350){
-        if(activeTab==='china')toggleChinaCity(name,COLORS[0]);
+        if(activeTab==='china'){
+          const info=chinaCityInfo.find(c=>c.name===name||c.adcode+''===name);
+          if(info){toggleChinaCity(info.adcode+'',COLORS[0])}else{showToast('未找到: '+name)}
+        }else if(viewingCountry)toggleWorldSubRegion(name,COLORS[0]);
         else toggleWorldCountry(name,COLORS[0]);
         lastClickName='';lastClickTime=0;
       }else{
