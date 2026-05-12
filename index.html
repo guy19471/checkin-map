@@ -286,8 +286,11 @@ function initChart(){
         // Double click - show color picker
         if(activeTab==='china'){
           const info=chinaCityInfo.find(c=>c.adcode+''===name);
-          if(info && !checkinData.china[name])showColorPicker(name,info.name,'china');
-          else if(info)showColorPicker(name,info.name,'china',checkinData.china[name]);
+          if(info){
+            const adcode=info.adcode+'';
+            if(!checkinData.china[adcode])showColorPicker(adcode,info.name,'china');
+            else showColorPicker(adcode,info.name,'china',checkinData.china[adcode]);
+          }
         }else if(viewingCountry){
           if(!checkinData.worldSub[viewingCountry+'|'+name])showColorPicker(name,name,'worldSub');
           else showColorPicker(name,name,'worldSub',checkinData.worldSub[viewingCountry+'|'+name]);
@@ -312,9 +315,9 @@ function showItemInfo(name){
   if(activeTab==='china'){
     const info=chinaCityInfo.find(c=>c.adcode+''===name);
     if(info){
-      const color=checkinData.china[name];
+      const color=checkinData.china[adcode];
       if(color){
-        showColorPicker(name,info.name,'china',color);
+        showColorPicker(adcode,info.name,'china',color);
       }else{
         document.getElementById('hint-text').textContent=` ${info.name}（${info.province}）- 双击打卡`;
         document.getElementById('hint-box').classList.add('show');
@@ -535,7 +538,7 @@ function goBack(){
       const name=params.name;
       const now=Date.now();
       if(lastClickName===name && now-lastClickTime<350){
-        if(activeTab==='china')toggleChinaCity(name,COLORS[0]);
+        if(activeTab==='china'){const info=chinaCityInfo.find(x=>x.name===name);if(info)toggleChinaCity(info.adcode+'',COLORS[0])}
         else toggleWorldCountry(name,COLORS[0]);
         lastClickName='';lastClickTime=0;
       }else{
