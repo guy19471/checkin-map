@@ -1406,18 +1406,21 @@ async function enterCountryDetail(countryName){
 
 
       if(countryName==='United States of America'){
-
-
-        const usIds=['01','02','04','05','06','08','09','10','11','12','13','15','16','17','18','19','20','21','22','23','24','25','26','27','28','29','30','31','32','33','34','35','36','37','38','39','40','41','42','44','45','46','47','48','49','50','51','53','54','55','56','72'];
-
-
-        const usCn=['阿拉巴马','阿拉斯加','亚利桑那','阿肯色','加利福尼亚','科罗拉多','康涅狄格','特拉华','华盛顿特区','佛罗里达','佐治亚','夏威夷','爱达荷','伊利诺伊','印第安纳','艾奥瓦','堪萨斯','肯塔基','路易斯安那','缅因','马里兰','马萨诸塞','密歇根','明尼苏达','密西西比','密苏里','蒙大拿','内布拉斯加','内华达','新罕布什尔','新泽西','新墨西哥','纽约','北卡罗来纳','北达科他','俄亥俄','俄克拉荷马','俄勒冈','宾夕法尼亚','罗德岛','南卡罗来纳','南达科他','田纳西','德克萨斯','犹他','佛蒙特','弗吉尼亚','华盛顿','西弗吉尼亚','威斯康星','怀俄明','波多黎各'];
-
-
-        usIds.forEach((id,i)=>{window.US_STATE_NAMES[id]=usCn[i];regions.push({name:usCn[i],id:id})});
-
-
-      }else{
+        const usRes=await fetch('./data/us_states.json');
+        geoData=await usRes.json();
+        const EN_TO_CN={'Alabama':'阿拉巴马','Alaska':'阿拉斯加','Arizona':'亚利桑那','Arkansas':'阿肯色','California':'加利福尼亚','Colorado':'科罗拉多','Connecticut':'康涅狄格','Delaware':'特拉华','District of Columbia':'哥伦比亚特区','Florida':'佛罗里达','Georgia':'佐治亚','Hawaii':'夏威夷','Idaho':'爱达荷','Illinois':'伊利诺伊','Indiana':'印第安纳','Iowa':'艾奥瓦','Kansas':'堪萨斯','Kentucky':'肯塔基','Louisiana':'路易斯安那','Maine':'缅因','Maryland':'马里兰','Massachusetts':'马萨诸塞','Michigan':'密歇根','Minnesota':'明尼苏达','Mississippi':'密西西比','Missouri':'密苏里','Montana':'蒙大拿','Nebraska':'内布拉斯加','Nevada':'内华达','New Hampshire':'新罕布什尔','New Jersey':'新泽西','New Mexico':'新墨西哥','New York':'纽约','North Carolina':'北卡罗来纳','North Dakota':'北达科他','Ohio':'俄亥俄','Oklahoma':'俄克拉荷马','Oregon':'俄勒冈','Pennsylvania':'宾夕法尼亚','Rhode Island':'罗德岛','South Carolina':'南卡罗来纳','South Dakota':'南达科他','Tennessee':'田纳西','Texas':'得克萨斯','Utah':'犹他','Vermont':'佛蒙特','Virginia':'弗吉尼亚','Washington':'华盛顿','West Virginia':'西弗吉尼亚','Wisconsin':'威斯康星','Wyoming':'怀俄明'};
+        const FIPS_TO_CN={};
+        const EN_TO_FIPS={};
+        const usCnData=[['01','Alabama','阿拉巴马'],['02','Alaska','阿拉斯加'],['04','Arizona','亚利桑那'],['05','Arkansas','阿肯色'],['06','California','加利福尼亚'],['08','Colorado','科罗拉多'],['09','Connecticut','康涅狄格'],['10','Delaware','特拉华'],['11','District of Columbia','哥伦比亚特区'],['12','Florida','佛罗里达'],['13','Georgia','佐治亚'],['15','Hawaii','夏威夷'],['16','Idaho','爱达荷'],['17','Illinois','伊利诺伊'],['18','Indiana','印第安纳'],['19','Iowa','艾奥瓦'],['20','Kansas','堪萨斯'],['21','Kentucky','肯塔基'],['22','Louisiana','路易斯安那'],['23','Maine','缅因'],['24','Maryland','马里兰'],['25','Massachusetts','马萨诸塞'],['26','Michigan','密歇根'],['27','Minnesota','明尼苏达'],['28','Mississippi','密西西比'],['29','Missouri','密苏里'],['30','Montana','蒙大拿'],['31','Nebraska','内布拉斯加'],['32','Nevada','内华达'],['33','New Hampshire','新罕布什尔'],['34','New Jersey','新泽西'],['35','New Mexico','新墨西哥'],['36','New York','纽约'],['37','North Carolina','北卡罗来纳'],['38','North Dakota','北达科他'],['39','Ohio','俄亥俄'],['40','Oklahoma','俄克拉荷马'],['41','Oregon','俄勒冈'],['42','Pennsylvania','宾夕法尼亚'],['44','Rhode Island','罗德岛'],['45','South Carolina','南卡罗来纳'],['46','South Dakota','南达科他'],['47','Tennessee','田纳西'],['48','Texas','得克萨斯'],['49','Utah','犹他'],['50','Vermont','佛蒙特'],['51','Virginia','弗吉尼亚'],['53','Washington','华盛顿'],['54','West Virginia','西弗吉尼亚'],['55','Wisconsin','威斯康星'],['56','Wyoming','怀俄明']];
+        usCnData.forEach(d=>{FIPS_TO_CN[d[0]]=d[2];EN_TO_FIPS[d[1]]=d[0];window.US_STATE_NAMES[d[0]]=d[2];});
+        geoData.features.forEach(f=>{
+          const en=f.properties.name||'';
+          const cnName=EN_TO_CN[en]||en;
+          const fipsId=EN_TO_FIPS[en]||en;
+          regions.push({name:en,cnName:cnName,id:fipsId});
+          window.US_STATE_NAMES[en]=cnName;
+        });
+      }}else{
 
 
         for(let i=1;i<=Math.min(ri.count,50);i++){
