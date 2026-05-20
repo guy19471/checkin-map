@@ -947,13 +947,29 @@ function initChart(){
         }
       }
     });
-  // Mobile: touch-based double-tap (no browser 300ms delay)
-  const mapDom=document.getElementById('map');
+  }
 
+
+function makeChinaOption(){
+
+  const data=chinaCityInfo.map(c=>{
+
+    const color=checkinData.china[c.adcode+''];
+
+    return{
+
+      name:c.adcode+'',
+
+      itemStyle:{areaColor:color||'#1e293b'},
+
+      emphasis:{itemStyle:{areaColor:color||'#f59e0b',shadowBlur:10,shadowColor:color||'#f59e0b'}}
+
+    }
+
+  });
 
 
   return{
-
 
     backgroundColor:'#0f172a',
 
