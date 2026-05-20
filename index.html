@@ -10,7 +10,7 @@
 <meta charset="UTF-8">
 
 
-<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=2,user-scalable=yes">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1,user-scalable=no">
 
 
 <title>🗺️ 城市打卡地图</title>
@@ -1629,102 +1629,22 @@ function renderCountryDetailList(country,regions,ri){
 
 
 function goBack(){
-
-
   viewingCountry=null;
-
-
   viewingCountryName='';
-
-
-  document.getElementById('title').textContent='🗺️ 城市打卡地图';
-
-
+  document.getElementById('title').textContent='🗺 城市打卡地图';
   document.getElementById('back-btn').style.display='none';
-
-
-  
-
-
-  // Restore map
-
-
-  document.getElementById('map').innerHTML='';
-
-
-  chart=echarts.init(document.getElementById('map'));
-
-
-  chart.on('click',params=>{
-
-
-    if(params.componentType==='series'){
-
-
-      const name=params.name;
-
-
-      const now=Date.now();
-
-
-      if(lastClickName===name && now-lastClickTime<350){
-
-
-        if(activeTab==='china'){const info=chinaCityInfo.find(x=>x.adcode+''===name);if(info){const ad=info.adcode+'';if(!checkinData.china[ad]){showColorPicker(ad,info.name,'china');lastClickName='';lastClickTime=0}}}
-
-
-        else if(viewingCountry){const key=viewingCountry+'|'+name;if(!checkinData.worldSub[key])showColorPicker(name,name,'worldSub');else showColorPicker(name,name,'worldSub',checkinData.worldSub[key]);lastClickName='';lastClickTime=0}
-
-
-        else toggleWorldCountry(name,COLORS[0]);
-
-
-        lastClickName='';lastClickTime=0;
-
-
-      }else{
-
-
-        lastClickName=name;lastClickTime=now;
-
-
-        showItemInfo(name);
-
-
-      }
-
-
-    }
-
-
-  });
-
-
-  
-
-
+  // Reuse existing chart - do NOT destroy and recreate (that loses dblclick binding)
   if(activeTab==='china')chart.setOption(makeChinaOption(),true);
-
-
   else chart.setOption(makeWorldOption(),true);
-
-
-  
-
-
   renderStats();renderFilterSelect();renderItemList();renderLegend();
-
-
   document.getElementById('hint-box').classList.remove('show');
-
-
 }
 
 
 
 
 
-// ==================== TAB SWITCHING ====================
+// ==================== TAB SWITCHINGSWITCHING ====================
 
 
 function switchTab(tab){
