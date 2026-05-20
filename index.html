@@ -829,7 +829,7 @@ function saveData(){
 // ==================== CHART ====================
 
 
-let lastClickTime=0,lastClickName='';
+let lastClickTime=0,lastClickName='',lastTapTime=0,lastTapName='';
 
 
 function initChart(){
@@ -850,7 +850,7 @@ function initChart(){
       const now=Date.now();
 
 
-      if(lastClickName===name && now-lastClickTime<350){
+      if(lastClickName===name && now-lastClickTime<500){
 
 
         // Double click - show color picker
@@ -947,6 +947,79 @@ function initChart(){
         }
       }
     });
+  // Mobile: touch-based double-tap (no browser 300ms delay)
+  const mapDom=document.getElementById('map');
+  let touchTapCount=0,touchTapTarget=null,touchTapTimer=null;
+  mapDom.addEventListener('touchend',e=>{
+    if(!chart)return;
+    touchTapCount++;
+    const touch=e.changedTouches[0];
+    if(!touch)return;
+    const rect=mapDom.getBoundingClientRect();
+    const x=touch.clientX-rect.left;
+    const y=touch.clientY-rect.top;
+    // Use ECharts containPixel to detect if we tapped on a map region
+    let tappedRegion=null;
+    try{
+      // Check each data item
+      const series=chart.getModel().getSeriesByIndex(0);
+      if(series){
+        const data=series.getData();
+        for(let i=0;i<data.count();i++){
+          const regionName=data.getName(i);
+          const el=data.getItemGraphicEl(i);
+          if(el){
+            const shape=el.shape;
+            if(shape){
+              const cx=shape.cx||shape.x+(shape.width||0)/2;
+              const cy=shape.cy||shape.y+(shape.height||0)/2;
+              const r=shape.r||Math.max(shape.width||20,shape.height||20)/2;
+              const dist=Math.sqrt((x-cx)*(x-cx)+(y-cy)*(y-cy));
+              if(dist<r*1.5){
+                tappedRegion=regionName;
+                break;
+              }
+            }
+          }
+        }
+      }
+    }catch(err){}
+    if(!tappedRegion){
+      // Fallback: simulate click event to get params
+      // ECharts will process the touch and fire a click event later
+      // We'll use a timer-based approach
+      if(touchTapTimer)clearTimeout(touchTapTimer);
+      if(touchTapCount===2){
+        touchTapCount=0;
+        // Let the normal click handler deal with it - the 500ms threshold should work
+        // after viewport changes
+      }
+      touchTapTimer=setTimeout(()=>{touchTapCount=0;touchTapTarget=null;},600);
+      return;
+    }
+    if(touchTapTimer)clearTimeout(touchTapTimer);
+    if(touchTapTarget===tappedRegion && touchTapCount>=2){
+      // Double tap on same region!
+      e.preventDefault();
+      touchTapCount=0;touchTapTarget=null;touchTapTimer=null;
+      // Trigger check-in
+      const name=tappedRegion;
+      if(activeTab==='china'){
+        const info=chinaCityInfo.find(c=>c.adcode+''===name);
+        if(info){
+          const adcode=info.adcode+'';
+          showColorPicker(adcode,info.name,'china',checkinData.china[adcode]);
+        }
+      }else if(viewingCountry){
+        showColorPicker(name,name,'worldSub',checkinData.worldSub[viewingCountry+'|'+name]);
+      }else{
+        showColorPicker(name,name,'world',checkinData.world[name]);
+      }
+    }else{
+      touchTapTarget=tappedRegion;
+      touchTapTimer=setTimeout(()=>{touchTapCount=0;touchTapTarget=null;},600);
+    }
+  },{passive:false});
   window.addEventListener('resize',()=>{if(chart)chart.resize()});
 
 
